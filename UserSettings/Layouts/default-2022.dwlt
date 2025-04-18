@@ -74,7 +74,7 @@ MonoBehaviour:
   m_MinSize: {x: 100, y: 100}
   m_MaxSize: {x: 8096, y: 16192}
   vertical: 1
-  controlID: 51
+  controlID: 73
   draggingID: 0
 --- !u!114 &4
 MonoBehaviour:
@@ -172,7 +172,7 @@ MonoBehaviour:
   m_MinSize: {x: 300, y: 100}
   m_MaxSize: {x: 24288, y: 16192}
   vertical: 0
-  controlID: 137
+  controlID: 135
   draggingID: 0
 --- !u!114 &8
 MonoBehaviour:
@@ -198,7 +198,7 @@ MonoBehaviour:
   m_MinSize: {x: 100, y: 100}
   m_MaxSize: {x: 8096, y: 16192}
   vertical: 1
-  controlID: 19
+  controlID: 27
   draggingID: 0
 --- !u!114 &9
 MonoBehaviour:
@@ -218,7 +218,7 @@ MonoBehaviour:
     x: 0
     y: 0
     width: 874
-    height: 428.66666
+    height: 320
   m_MinSize: {x: 201, y: 221}
   m_MaxSize: {x: 4001, y: 4021}
   m_ActualView: {fileID: 14}
@@ -245,9 +245,9 @@ MonoBehaviour:
   m_Position:
     serializedVersion: 2
     x: 0
-    y: 428.66666
+    y: 320
     width: 874
-    height: 390.66666
+    height: 499.3333
   m_MinSize: {x: 201, y: 221}
   m_MaxSize: {x: 4001, y: 4021}
   m_ActualView: {fileID: 18}
@@ -1171,7 +1171,7 @@ MonoBehaviour:
     x: 0
     y: 72.66667
     width: 873
-    height: 407.66666
+    height: 299
   m_SerializedDataModeController:
     m_DataMode: 0
     m_PreferredDataMode: 0
@@ -1463,7 +1463,7 @@ MonoBehaviour:
       snapOffsetDelta: {x: 0, y: 0}
       snapCorner: 0
       id: UnityEditor.SceneViewCameraOverlay
-      index: 10
+      index: 11
       layout: 4
       size: {x: 0, y: 0}
       sizeOverriden: 0
@@ -1556,9 +1556,9 @@ MonoBehaviour:
   m_PlayAudio: 0
   m_AudioPlay: 0
   m_Position:
-    m_Target: {x: 0.008776648, y: 0.9513701, z: 0.49722275}
+    m_Target: {x: 0, y: 9.92, z: -7.55}
     speed: 2
-    m_Value: {x: 0.008776648, y: 0.9513701, z: 0.49722275}
+    m_Value: {x: 0, y: 9.92, z: -7.5499997}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -1604,13 +1604,13 @@ MonoBehaviour:
     m_GridAxis: 1
     m_gridOpacity: 0.5
   m_Rotation:
-    m_Target: {x: 0.02036599, y: -0.05496092, z: 0.0011211552, w: 0.99828845}
+    m_Target: {x: 0.22862057, y: -0.51227945, z: 0.14365761, w: 0.8152883}
     speed: 2
-    m_Value: {x: 0.021362912, y: -0.055957578, z: 0.0011974722, w: 0.9982039}
+    m_Value: {x: 0.23039179, y: -0.5111683, z: 0.14444943, w: 0.81532884}
   m_Size:
-    m_Target: 2.7632627
+    m_Target: 16.499573
     speed: 2
-    m_Value: 2.7632627
+    m_Value: 15.789064
   m_Ortho:
     m_Target: 1
     speed: 2
@@ -1628,8 +1628,8 @@ MonoBehaviour:
     m_FarClip: 10000
     m_DynamicClip: 1
     m_OcclusionCulling: 0
-  m_LastSceneViewRotation: {x: -0.051977623, y: 0.9469145, z: -0.246644, w: -0.1995508}
-  m_LastSceneViewOrtho: 0
+  m_LastSceneViewRotation: {x: 0.02036599, y: -0.05496092, z: 0.0011211552, w: 0.99828845}
+  m_LastSceneViewOrtho: 1
   m_ReplacementShader: {fileID: 0}
   m_ReplacementString: 
   m_SceneVisActive: 1
@@ -1794,9 +1794,9 @@ MonoBehaviour:
   m_Pos:
     serializedVersion: 2
     x: 0
-    y: 501.33334
+    y: 392.6667
     width: 873
-    height: 369.66666
+    height: 478.3333
   m_SerializedDataModeController:
     m_DataMode: 0
     m_PreferredDataMode: 0
@@ -1850,22 +1850,22 @@ MonoBehaviour:
       x: 0
       y: 21
       width: 873
-      height: 348.66666
-    m_Scale: {x: 0.36319444, y: 0.36319444}
-    m_Translation: {x: 436.5, y: 174.33333}
+      height: 457.3333
+    m_Scale: {x: 0.47638887, y: 0.47638887}
+    m_Translation: {x: 436.5, y: 228.66666}
     m_MarginLeft: 0
     m_MarginRight: 0
     m_MarginTop: 0
     m_MarginBottom: 0
     m_LastShownAreaInsideMargins:
       serializedVersion: 2
-      x: -1201.8356
+      x: -916.26825
       y: -480
-      width: 2403.6711
+      width: 1832.5365
       height: 960
     m_MinimalGUI: 1
-  m_defaultScale: 0.36319444
-  m_LastWindowPixelSize: {x: 1309.5, y: 554.5}
+  m_defaultScale: 0.47638887
+  m_LastWindowPixelSize: {x: 1309.5, y: 717.5}
   m_ClearInEditMode: 1
   m_NoCameraWarning: 1
   m_LowResolutionForAspectRatios: 01000000000000000000
@@ -1947,23 +1947,23 @@ MonoBehaviour:
       scrollPos: {x: 0, y: 0}
       m_SelectedIDs: 
       m_LastClickedID: 0
-      m_ExpandedIDs: 58d3feff66d3feff0ad4feffbad4feff60d5feff6cdbfeff30dffeffb8e2feff80fafeffccf8ffff1afbffff08d70000
+      m_ExpandedIDs: 3ef8ffffd0faffff
       m_RenameOverlay:
         m_UserAcceptedRename: 0
-        m_Name: DetectedPlane_1
-        m_OriginalName: DetectedPlane_1
+        m_Name: 
+        m_OriginalName: 
         m_EditFieldRect:
           serializedVersion: 2
           x: 0
           y: 0
           width: 0
           height: 0
-        m_UserData: -102784
+        m_UserData: 0
         m_IsWaitingForDelay: 0
         m_IsRenaming: 0
-        m_OriginalEventType: 0
+        m_OriginalEventType: 11
         m_IsRenamingFilename: 0
-        m_ClientGUIView: {fileID: 11}
+        m_ClientGUIView: {fileID: 9}
       m_SearchString: 
     m_ExpandedScenes: []
     m_CurrenRootInstanceID: 0
@@ -2016,7 +2016,7 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets/Resource
+    - Assets/Scenes
     m_Globs: []
     m_OriginalText: 
     m_ImportLogFlags: 0
@@ -2024,16 +2024,16 @@ MonoBehaviour:
   m_ViewMode: 1
   m_StartGridSize: 16
   m_LastFolders:
-  - Assets/Resource
+  - Assets/Scenes
   m_LastFoldersGridSize: 16
   m_LastProjectPath: D:\School\AREditor\Unity\AREditor
   m_LockTracker:
     m_IsLocked: 0
   m_FolderTreeState:
     scrollPos: {x: 0, y: 0}
-    m_SelectedIDs: 886f0000
-    m_LastClickedID: 28552
-    m_ExpandedIDs: 000000002a6f0000786f0000886f0000cebf0000d2bf0000ffffff7f
+    m_SelectedIDs: 58800000
+    m_LastClickedID: 32856
+    m_ExpandedIDs: 000000007a7e00007c7e0000807e0000827e0000ffffff7f
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -2061,7 +2061,7 @@ MonoBehaviour:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs: 
     m_LastClickedID: 0
-    m_ExpandedIDs: 000000002a6f00002c6f0000
+    m_ExpandedIDs: 000000007a7e00007c7e00007e7e0000807e0000827e0000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -2092,18 +2092,18 @@ MonoBehaviour:
     m_ExpandedInstanceIDs: f4b1000000000000045f00006476000032830000da8000008c5b0000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
-      m_Name: MeshPlaneFitting
-      m_OriginalName: MeshPlaneFitting
+      m_Name: 
+      m_OriginalName: 
       m_EditFieldRect:
         serializedVersion: 2
         x: 0
         y: 0
         width: 0
         height: 0
-      m_UserData: 28924
+      m_UserData: 0
       m_IsWaitingForDelay: 0
       m_IsRenaming: 0
-      m_OriginalEventType: 0
+      m_OriginalEventType: 11
       m_IsRenamingFilename: 1
       m_ClientGUIView: {fileID: 2}
     m_CreateAssetUtility:
