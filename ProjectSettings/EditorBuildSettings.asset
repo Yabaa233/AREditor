@@ -5,16 +5,42 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/Interface.unity
     guid: 6e6e03381b9ae5b4d953c76a1cf25d77
   - enabled: 0
     path: Assets/Scenes/TestAR.unity
     guid: b5bd9407688ba5a4a8bd301762c536ea
+  - enabled: 0
+    path: Assets/Scenes/TestARAlignment.unity
+    guid: 7a8f39b21825fe4458d84fe71e874418
+  - enabled: 0
+    path: Assets/Scenes/TestVuforia.unity
+    guid: d73d0c7e5cb395342a56ff18a2c3d803
+  - enabled: 0
+    path: Assets/Scenes/makecontent.unity
+    guid: 6102698665ea04acda655c4080e766f0
+  - enabled: 0
+    path: Assets/Samples/EasyAR Sense Unity Plugin/4.6.5+3052.b2f1b028/WorldSensing
+      SpatialMap_Sparse_ImageTarget/Scenes/SpatialMap_Sparse_ImageTarget.unity
+    guid: a00e0fae6db8318408c0ccaf046075fa
+  - enabled: 0
+    path: Assets/Samples/EasyAR Sense Unity Plugin/4.6.5+3052.b2f1b028/WorldSensing
+      SpatialMap_SparseSpatialMap/Scenes/SpatialMap_SparseSpatialMap.unity
+    guid: 645e981584f1b444d94efe78e24ee749
+  - enabled: 0
+    path: Assets/Samples/EasyAR Sense Unity Plugin/4.6.5+3052.b2f1b028/WorldSensing
+      SpatialMap_Dense_BallGame/Scenes/SpatialMap_Dense_BallGame.unity
+    guid: 2e824238374dbec428bc4a6184d43df8
+  - enabled: 1
+    path: Assets/Scenes/stylize_test.unity
+    guid: 9fc0d4010bbf28b4594072e72b8655ab
   m_configObjects:
+    EasyAR.Settings: {fileID: 11400000, guid: 4ab9e96f95bd1874a89ccc61b8297878, type: 2}
+    Niantic.Lightship.AR.LightshipSettings: {fileID: 11400000, guid: a1779466bac34c643b19153e134e2489, type: 2}
     UnityEditor.XR.ARCore.ARCoreSettings: {fileID: 11400000, guid: dca7b0fa5da91674abd373a1679945ad, type: 2}
     UnityEditor.XR.ARKit.ARKitSettings: {fileID: 11400000, guid: 0554094b0731a0e4dbdf961c9f7e5db5, type: 2}
     com.unity.xr.arfoundation.simulation_settings: {fileID: 11400000, guid: d969af7902265694aa3a2c088e61327f, type: 2}
     com.unity.xr.magicleap.magic_leap_settings: {fileID: 11400000, guid: 5357b03162573c3409dd593a78846dfa, type: 2}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 6b2b3df531dffed46a09e1af39b4f777, type: 2}
-    com.unity.xr.openxr.settings4: {fileID: 11400000, guid: bf5a8178d97017549b194c482afd1b6a, type: 2}
+    com.unity.xr.openxr.settings4: {fileID: 11400000, guid: f9e4a2e0609d0483984883f2bb0d6ea5, type: 2}
