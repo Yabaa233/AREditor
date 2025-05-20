@@ -8,7 +8,7 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/Interface.unity
     guid: 6e6e03381b9ae5b4d953c76a1cf25d77
-  - enabled: 0
+  - enabled: 1
     path: Assets/Scenes/TestAR.unity
     guid: b5bd9407688ba5a4a8bd301762c536ea
   - enabled: 0
@@ -32,9 +32,12 @@ EditorBuildSettings:
     path: Assets/Samples/EasyAR Sense Unity Plugin/4.6.5+3052.b2f1b028/WorldSensing
       SpatialMap_Dense_BallGame/Scenes/SpatialMap_Dense_BallGame.unity
     guid: 2e824238374dbec428bc4a6184d43df8
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/stylize_test.unity
     guid: 9fc0d4010bbf28b4594072e72b8655ab
+  - enabled: 0
+    path: Assets/Scenes/TestPlyAR.unity
+    guid: 195fe02e34a7b5c4b98f79f6250caff6
   m_configObjects:
     EasyAR.Settings: {fileID: 11400000, guid: 4ab9e96f95bd1874a89ccc61b8297878, type: 2}
     Niantic.Lightship.AR.LightshipSettings: {fileID: 11400000, guid: a1779466bac34c643b19153e134e2489, type: 2}
