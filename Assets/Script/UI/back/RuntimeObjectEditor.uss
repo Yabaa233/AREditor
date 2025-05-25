@@ -1,0 +1,43 @@
+#root {
+    padding: 15px;
+    flex-direction: column;
+    width: 300px;
+    background-color: #2d2d2d;
+    border-radius: 8px;
+    border-width: 2px;
+    border-color: #4a4a4a;
+}
+
+Label {
+    color: white;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+TextField,
+Toggle,
+Vector3Field,
+DropdownField {
+    flex-grow: 1;
+    background-color: #3a3a3a;
+    color: white;
+    border-radius: 4px;
+    border-color: #666;
+    margin-bottom: 10px;
+}
+
+Vector3Field {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+}
+
+Vector3Field > .unity-composite-field__field {
+    flex-direction: row;
+    gap: 5px;
+}
+
+Vector3Field > .unity-composite-field__field > FloatField {
+    flex-grow: 1;
+    min-width: 0;
+}

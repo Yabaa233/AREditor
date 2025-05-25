@@ -1,0 +1,9 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/Script/UI/back/RuntimeObjectEditor.uss?fileID=7433441132597879392&amp;guid=540266a6c21851c4bbd5db0bfd788cf8&amp;type=3#RuntimeObjectEditor" />
+    <ui:VisualElement name="root" style="flex-direction: column; padding: 10px; gap: 5px;">
+        <ui:Label text="Object Editor" style="unity-font-style: bold; font-size: 16px;" />
+        <ui:Toggle name="enabledToggle" label="Enabled" />
+        <ui:DropdownField name="typeDropdown" label="Trigger" />
+        <ui:DropdownField name="detailDropdown" label="Result" />
+    </ui:VisualElement>
+</ui:UXML>

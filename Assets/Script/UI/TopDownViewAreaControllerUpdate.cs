@@ -1,42 +1,32 @@
 ﻿using UnityEngine;
 using UnityEngine.EventSystems;
 
-public class TopDownCameraController : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+public enum CameraControlState { Idle, Pan, ZoomRotate }
+
+public class TopDownCameraControllerUpdate : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
     public Camera topDownCamera;
 
-    // 拖动参数
     public float panSpeed = 0.01f;
-
-    // 缩放限制
     public float zoomMin = 2f;
     public float zoomMax = 20f;
+    public float rotationThreshold = 5f;
+    public float rotationSensitivity = 1f;
 
-    // 旋转参数
-    public float rotationThreshold = 5f;      // 最小触发角度（单位：度）
-    public float rotationSensitivity = 1f;    // 设置为 -1 可反转旋转方向
-
-    // 状态控制
     private CameraControlState currentState = CameraControlState.Idle;
-    public CameraControlState CurrentState => currentState;  // 提供只读访问
+    public CameraControlState CurrentState => currentState;
 
-    // 状态变量
     private Vector2 actionPosition;
     private float initialSpacing;
     private float initialRotation_forRotation;
 
     private bool isPointerInside = false;
 
-    // 双击复位用
     private float lastTapTime = 0f;
     private Vector2 lastTapPosition;
-    public float doubleTapThreshold = 0.8f;
-    public float tapMoveThreshold = 200f;
+    public float doubleTapThreshold = 0.3f;
+    public float tapMoveThreshold = 20f;
 
-    private float lastMultiTouchEndTime = 0f;
-    public float singleTouchDelayThreshold = 0.8f;
-
-    // 记录初始状态
     private Vector3 initialPosition;
     private Quaternion initialRotation_forReset;
     private float initialOrthoSize;
@@ -55,20 +45,100 @@ public class TopDownCameraController : MonoBehaviour, IPointerEnterHandler, IPoi
     {
         if (!isPointerInside) return;
 
+#if UNITY_EDITOR || UNITY_STANDALONE
+        HandleMouseInput();
+#else
+        HandleTouchInput();
+#endif
+    }
+
+    // =================== Windows (鼠标操作) ===================
+#if UNITY_EDITOR || UNITY_STANDALONE
+    void HandleMouseInput()
+    {
+        float scroll = Input.GetAxis("Mouse ScrollWheel");
+        if (Mathf.Abs(scroll) > 0.01f)
+        {
+            topDownCamera.orthographicSize = Mathf.Clamp(topDownCamera.orthographicSize - scroll * 5f, zoomMin, zoomMax);
+        }
+
+        if (Input.GetMouseButtonDown(1))
+        {
+            actionPosition = Input.mousePosition;
+            currentState = CameraControlState.Pan;
+        }
+        else if (Input.GetMouseButton(1) && currentState == CameraControlState.Pan)
+        {
+            Vector2 delta = (Vector2)Input.mousePosition - actionPosition;
+
+            Vector3 right = topDownCamera.transform.right;
+            Vector3 up = topDownCamera.transform.up;
+
+            Vector3 move = (-right * delta.x - up * delta.y) * panSpeed;
+            topDownCamera.transform.position += move;
+
+            actionPosition = Input.mousePosition;
+        }
+        else if (Input.GetMouseButtonUp(1))
+        {
+            currentState = CameraControlState.Idle;
+        }
+
+        if (Input.GetMouseButtonDown(2))
+        {
+            actionPosition = Input.mousePosition;
+            currentState = CameraControlState.ZoomRotate;
+        }
+        else if (Input.GetMouseButton(2) && currentState == CameraControlState.ZoomRotate)
+        {
+            float deltaX = Input.mousePosition.x - actionPosition.x;
+            if (Mathf.Abs(deltaX) > rotationThreshold)
+            {
+                topDownCamera.transform.Rotate(Vector3.up, deltaX * rotationSensitivity, Space.World);
+                actionPosition = Input.mousePosition;
+            }
+        }
+        else if (Input.GetMouseButtonUp(2))
+        {
+            currentState = CameraControlState.Idle;
+        }
+
+        if (Input.GetKey(KeyCode.Q))
+        {
+            topDownCamera.transform.Rotate(Vector3.up, -1f * rotationSensitivity, Space.World);
+        }
+        if (Input.GetKey(KeyCode.E))
+        {
+            topDownCamera.transform.Rotate(Vector3.up, 1f * rotationSensitivity, Space.World);
+        }
+
+        if (Input.GetMouseButtonDown(0))
+        {
+            float timeSinceLast = Time.time - lastTapTime;
+            float dist = Vector2.Distance(Input.mousePosition, lastTapPosition);
+            if (timeSinceLast < doubleTapThreshold && dist < tapMoveThreshold)
+            {
+                ResetView();
+            }
+            lastTapTime = Time.time;
+            lastTapPosition = Input.mousePosition;
+        }
+    }
+#else
+    // =================== 移动设备 (触摸操作) ===================
+    void HandleTouchInput()
+    {
         switch (Input.touchCount)
         {
             case 0:
                 currentState = CameraControlState.Idle;
                 break;
-
             case 1:
                 HandlePanTouch();
                 break;
-
             case 2:
                 HandleZoomRotateTouch();
                 break;
-
             default:
                 currentState = CameraControlState.Idle;
                 break;
@@ -77,8 +147,6 @@ public class TopDownCameraController : MonoBehaviour, IPointerEnterHandler, IPoi
 
     private void HandlePanTouch()
     {
-        if (Time.time - lastMultiTouchEndTime < singleTouchDelayThreshold) return;
-
         Touch touch = Input.GetTouch(0);
 
         if (touch.phase == TouchPhase.Began)
@@ -107,7 +175,6 @@ public class TopDownCameraController : MonoBehaviour, IPointerEnterHandler, IPoi
 
             actionPosition = touch.position;
         }
-
     }
 
     private void HandleZoomRotateTouch()
@@ -138,11 +205,6 @@ public class TopDownCameraController : MonoBehaviour, IPointerEnterHandler, IPoi
                 initialRotation_forRotation = currentRotation;
             }
         }
-        else if (t0.phase == TouchPhase.Ended || t1.phase == TouchPhase.Ended)
-        {
-            currentState = CameraControlState.Idle;
-            lastMultiTouchEndTime = Time.time;
-        }
     }
 
     private float GetAngle(Touch t0, Touch t1)
@@ -150,6 +212,7 @@ public class TopDownCameraController : MonoBehaviour, IPointerEnterHandler, IPoi
         Vector2 diff = t1.position - t0.position;
         return Mathf.Atan2(diff.y, diff.x) * Mathf.Rad2Deg;
     }
+#endif
 
     public void ResetView()
     {
@@ -163,5 +226,4 @@ public class TopDownCameraController : MonoBehaviour, IPointerEnterHandler, IPoi
 
     public void OnPointerEnter(PointerEventData eventData) => isPointerInside = true;
     public void OnPointerExit(PointerEventData eventData) => isPointerInside = false;
-
 }
