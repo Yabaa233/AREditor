@@ -1,0 +1,73 @@
+{
+    "objects": [
+        {
+            "templateID": "4",
+            "ID": "74f170e8-23c2-4a20-bf70-c380452e1b9e",
+            "ifHiddenAtGameStart": false,
+            "position": {
+                "x": 2.4267120361328127,
+                "y": 1.373178243637085,
+                "z": 0.5319583415985107
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "events": [
+                {
+                    "triggerType": 0,
+                    "actionType": 2,
+                    "targetObjectID": "77fbca02-2d2a-474d-8ba9-8a8f22215c68"
+                }
+            ]
+        },
+        {
+            "templateID": "1",
+            "ID": "77fbca02-2d2a-474d-8ba9-8a8f22215c68",
+            "ifHiddenAtGameStart": false,
+            "position": {
+                "x": 0.6668778657913208,
+                "y": 0.820625364780426,
+                "z": -0.5721008777618408
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 0.9999999403953552,
+                "y": 0.9999999403953552,
+                "z": 0.9999999403953552
+            },
+            "events": []
+        },
+        {
+            "templateID": "2",
+            "ID": "f9f48616-4a8d-41b6-b7dc-e01343cd16a8",
+            "ifHiddenAtGameStart": false,
+            "position": {
+                "x": -1.5172842741012574,
+                "y": 1.331525444984436,
+                "z": 2.3101792335510256
+            },
+            "rotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "scale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "events": []
+        }
+    ]
+}

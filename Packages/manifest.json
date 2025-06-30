@@ -11,6 +11,7 @@
   "dependencies": {
     "com.easyar.sense": "file:EasyARSenseUnityPlugin_4.6.5+3052.b2f1b028/com.easyar.sense-4.6.5+3052.b2f1b028.tgz",
     "com.nianticlabs.lightship": "https://github.com/niantic-lightship/ardk-upm.git",
+    "com.unity.2d.sprite": "1.0.0",
     "com.unity.collab-proxy": "2.6.0",
     "com.unity.feature.ar": "1.0.1",
     "com.unity.feature.development": "1.0.1",
