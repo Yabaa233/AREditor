@@ -13,10 +13,10 @@ public class UIManager : singleton<UIManager>//, IPointerEnterHandler, IPointerE
     public Action<GameObject> onPick;
 
     [ReadOnly]
-    public RawImage targetRawImage;       // 显示场景的 RawImage
+    public RawImage targetRawImage;       // RawImage for displaying the TopDownView
 
     [ReadOnly]
-    public Camera raycastCamera;          // 对应的渲染相机
+    public Camera raycastCamera;          // Camera for rendering the TopDownView
 
     [Required]
     public PlacedObjectInspector inspector;

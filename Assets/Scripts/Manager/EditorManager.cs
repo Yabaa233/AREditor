@@ -6,6 +6,9 @@ using System.Linq;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
+/// <summary>
+/// Manager of 2D Eitor
+/// </summary>
 public class EditorManager : singleton<EditorManager>
 {
     public PlacedObjectTemplateDatabase templateDB;
@@ -16,7 +19,7 @@ public class EditorManager : singleton<EditorManager>
     [ReadOnly]
     public GameObject focusedObject;
 
-    //关卡物体父级
+    // Parent of level objects
     private Transform levelParent;
 
     void Start()
@@ -26,7 +29,7 @@ public class EditorManager : singleton<EditorManager>
     }
 
     /// <summary>
-    /// 注册一个放置物体
+    /// Register an Object
     /// </summary>
     public void RegisterObject(GameObject obj)
     {
@@ -37,7 +40,7 @@ public class EditorManager : singleton<EditorManager>
     }
 
     /// <summary>
-    /// 移除一个放置物体（如果它是 focus，也取消 focus）
+    /// Remove a placed object (and clear focus if it's currently focused)
     /// </summary>
     public void UnregisterObject(GameObject obj)
     {
@@ -55,7 +58,7 @@ public class EditorManager : singleton<EditorManager>
     }
 
     /// <summary>
-    /// 设置 focus，仅能是 LevelObjects 中的对象
+    /// Set focus (must be an object from LevelObjects)
     /// </summary>
     public void SetFocus(GameObject obj)
     {
@@ -75,7 +78,7 @@ public class EditorManager : singleton<EditorManager>
     }
 
     /// <summary>
-    /// 取消当前 focus
+    /// Cancel cur focus
     /// </summary>
     public void ClearFocus()
     {
@@ -84,7 +87,7 @@ public class EditorManager : singleton<EditorManager>
     }
 
     /// <summary>
-    /// 判断某物体是否为当前 focus
+    /// Check if the object is the current focus
     /// </summary>
     public bool IsFocused(GameObject obj)
     {
@@ -139,7 +142,7 @@ public class EditorManager : singleton<EditorManager>
             handler.eventList = new List<TriggerActionEventData>();
         }
 
-        // 添加事件
+        // Add Event
         handler.eventList.Clear();
         handler.eventList.Add(evt);
         handler.Register(onEnter);
@@ -197,7 +200,7 @@ public class EditorManager : singleton<EditorManager>
 
         SceneSaveData sceneData = JsonUtility.FromJson<SceneSaveData>(json);
 
-        // 可选：清空原有 LevelObjects 内容
+        // Clear existing LevelObjects
         foreach (var obj in LevelObjects.ToList())
         {
             UnregisterObject(obj);
@@ -214,16 +217,16 @@ public class EditorManager : singleton<EditorManager>
             }
 
             GameObject obj = Instantiate(template.prefab);
-            obj.transform.SetParent(levelParent, worldPositionStays: false); // 自动应用父级的TRS变换
+            obj.transform.SetParent(levelParent, worldPositionStays: false); // Automatically apply parent’s TRS (Translation, Rotation, Scale)
 
             obj.transform.localPosition = data.position;
             obj.transform.localEulerAngles = data.rotation;
             obj.transform.localScale = data.scale;
 
-            // TODO 处理初始是否隐藏
+            // TODO: Handle initial visibility
             obj.SetActive(!data.ifHiddenAtGameStart);
 
-            // 回填 runtimeData
+            // Set runtimeData
             var placed = obj.GetComponent<PlacedObject>();
             if (placed != null)
             {
@@ -236,7 +239,7 @@ public class EditorManager : singleton<EditorManager>
 
         Debug.Log("Scene loaded from: " + fullPath);
 
-        //TODO AR模式下生成后viewer的报错
+        //TODO: Viewer in AR mode
     }
 
 

@@ -17,26 +17,24 @@ public class PlacedObjectPlaneViewer : MonoBehaviour
     private List<RectTransform> eventLines = new();
     private List<RectTransform> arrowInstances = new();
 
-    // TODO 胜利/失败，可视/不可视的 可视化
+    // TODO Visualize win/lose and visible/invisible status
     // public Sprite winSprite;
     // public Sprite loseSprite;
-
 
     void Awake()
     {
         uiParent = GameObject.FindGameObjectWithTag("ObjectIconParent").transform;
 
-        // 实例化 UI 标记
+        // Instantiate UI marker
         GameObject markerInstance = Instantiate(uiMarkerPrefab, uiParent);
         uiMarker = markerInstance.GetComponent<PlacedObjectUIMarker>();
         myData = gameObject.GetComponent<PlacedObject>();
-
     }
 
     void Update()
     {
         UpdateMarkerPosition();
-        UpdateLogicViewer(); // 每帧更新线条 //TODO 不应该每帧
+        UpdateLogicViewer(); // Update lines every frame // TODO should not update every frame
     }
 
     public void SetMarker(Sprite sprite)
@@ -47,17 +45,17 @@ public class PlacedObjectPlaneViewer : MonoBehaviour
 
     public void UpdateMarkerPosition()
     {
-        // 1. 世界坐标 → Viewport
+        // 1. World position → Viewport
         Vector3 viewportPos = UIManager.Instance.raycastCamera.WorldToViewportPoint(transform.position);
 
-        // 检查物体是否在摄像机前方
+        // Check if object is in front of the camera
         if (viewportPos.z < 0)
         {
             uiMarker.gameObject.SetActive(false);
             return;
         }
 
-        // 2. Viewport → RawImage 局部坐标
+        // 2. Viewport → RawImage local position
         float u = viewportPos.x;
         float v = viewportPos.y;
 
@@ -68,14 +66,14 @@ public class PlacedObjectPlaneViewer : MonoBehaviour
         float y = (v - 0.5f) * height;
         Vector2 localPos = new Vector2(x, y);
 
-        // 3. 设置绿色高亮区域
+        // 3. Set green highlight area
         uiMarker.gameObject.SetActive(true);
         uiMarker.GetComponent<RectTransform>().anchoredPosition = localPos;
     }
 
     private void UpdateLogicViewer()
     {
-        // 清理旧线
+        // Clear old lines
         foreach (var line in eventLines)
         {
             if (line != null)
@@ -111,7 +109,7 @@ public class PlacedObjectPlaneViewer : MonoBehaviour
             var targetViewer = target.GetComponent<PlacedObjectPlaneViewer>();
             if (targetViewer == null || targetViewer.uiMarker == null) continue;
 
-            // 画线
+            // Draw line
             RectTransform start = uiMarker.GetComponent<RectTransform>();
             RectTransform end = targetViewer.uiMarker.GetComponent<RectTransform>();
 
@@ -121,36 +119,36 @@ public class PlacedObjectPlaneViewer : MonoBehaviour
 
             DrawLineBetween(start, end, lineRect, evt.actionType == ActionType.Enable ? Color.green : Color.red, 12f);
 
-            // 添加箭头
+            // Add arrow
             GameObject arrowObj = Instantiate(uiArrowPrefab, uiParent);
             arrowObj.GetComponent<Image>().color = evt.actionType == ActionType.Enable ? Color.green : Color.red;
             RectTransform arrowRect = arrowObj.GetComponent<RectTransform>();
             arrowInstances.Add(arrowRect);
 
-            // 设置位置（略微前移，让箭头不盖住目标）
+            // Slightly move forward to avoid covering the target
             Vector2 dir = (end.anchoredPosition - start.anchoredPosition).normalized;
-            arrowRect.anchoredPosition = end.anchoredPosition - dir * 20f; // 微调箭头位置
+            arrowRect.anchoredPosition = end.anchoredPosition - dir * 20f; // Adjust arrow position
 
-            // 设置角度
+            // Set rotation
             float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
             arrowRect.localRotation = Quaternion.Euler(0, 0, angle + 90f);
 
-            // 设置大小（可调）
+            // Set size (adjustable)
             arrowRect.sizeDelta = new Vector2(50, 50);
 
-            // // 添加 Win / Lose 图标
+            // // Add Win / Lose icon
             // if (evt.actionType == ActionType.Win || evt.actionType == ActionType.Lose)
             // {
             //     GameObject iconObj = new GameObject(evt.actionType.ToString() + "Icon");
             //     iconObj.transform.SetParent(uiMarker.transform);
-            //     iconObj.transform.SetAsLastSibling(); // 保证在最上层
+            //     iconObj.transform.SetAsLastSibling(); // Make sure it's on top
 
             //     RectTransform rt = iconObj.AddComponent<RectTransform>();
             //     rt.sizeDelta = new Vector2(30, 30);
             //     rt.anchorMin = new Vector2(0.5f, 0f);
             //     rt.anchorMax = new Vector2(0.5f, 0f);
             //     rt.pivot = new Vector2(0.5f, 0f);
-            //     rt.anchoredPosition = new Vector2(0, 50); // 显示在 marker 上方
+            //     rt.anchoredPosition = new Vector2(0, 50); // Show above the marker
 
             //     Image img = iconObj.AddComponent<Image>();
             //     img.sprite = evt.actionType == ActionType.Win ? winSprite : loseSprite;
@@ -179,14 +177,14 @@ public class PlacedObjectPlaneViewer : MonoBehaviour
 
     void OnDestroy()
     {
-        if (uiMarker != null&&uiMarker.gameObject != null)
+        if (uiMarker != null && uiMarker.gameObject != null)
         {
             DestroyImmediate(uiMarker.gameObject);
         }
 
         foreach (var item in eventLines)
         {
-            if(item != null && item.gameObject != null)
+            if (item != null && item.gameObject != null)
                 DestroyImmediate(item.gameObject);
         }
         foreach (var item in arrowInstances)
@@ -195,5 +193,4 @@ public class PlacedObjectPlaneViewer : MonoBehaviour
                 DestroyImmediate(item.gameObject);
         }
     }
-
 }

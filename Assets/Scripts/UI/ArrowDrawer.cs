@@ -4,14 +4,14 @@ using UnityEngine;
 [RequireComponent(typeof(PlacedObject))]
 public class RuntimeArrowDrawer : MonoBehaviour
 {
-    [Header("箭头外观设置（运行时可调）")]
+    [Header("Arrow Appearance Settings (Adjustable at Runtime)")]
     public GameObject arrowHeadPrefab;
     public float lineWidth = 0.05f;
     public Color lineColor = Color.red;
-    public float yOffset = 0.2f; // 新增：Y方向偏移量，防止线被遮挡或嵌入模型
+    public float yOffset = 0.2f; // New: Y-axis offset to prevent overlap or embedding in models
 
-    [Header("渲染层设置")]
-    public string sortingLayerName = "UI";  // 设置为 "UI" 或你自定义的 Sorting Layer
+    [Header("Rendering Layer Settings")]
+    public string sortingLayerName = "UI";  // Set to "UI" or your custom Sorting Layer
     public int sortingOrder = 1000;
 
     private PlacedObject placedObject;
@@ -41,7 +41,7 @@ public class RuntimeArrowDrawer : MonoBehaviour
             var evt = currentEvents[i];
             if (evt.targetObjectID == null) continue;
 
-            // ✅ Y轴偏移处理
+            // ✅ Y-axis offset handling
             Vector3 from = transform.position + Vector3.up * yOffset;
             Vector3 to = EditorManager.Instance.GetGameObjectByID(evt.targetObjectID).transform.position + Vector3.up * yOffset;
 
@@ -49,7 +49,7 @@ public class RuntimeArrowDrawer : MonoBehaviour
             line.SetPosition(0, from);
             line.SetPosition(1, to);
 
-            // 实时更新线宽与颜色
+            // Update line width and color in real-time
             line.startWidth = lineWidth;
             line.endWidth = lineWidth;
             line.startColor = lineColor;
@@ -103,7 +103,7 @@ public class RuntimeArrowDrawer : MonoBehaviour
                 line.positionCount = 2;
                 line.useWorldSpace = true;
 
-                // ✅ 设置渲染层级
+                // ✅ Set rendering layer order
                 line.sortingLayerName = sortingLayerName;
                 line.sortingOrder = sortingOrder;
 
@@ -112,7 +112,7 @@ public class RuntimeArrowDrawer : MonoBehaviour
                 if (arrowHeadPrefab != null)
                 {
                     GameObject arrow = Instantiate(arrowHeadPrefab, this.transform);
-                    arrow.layer = LayerMask.NameToLayer(sortingLayerName); // 可选
+                    arrow.layer = LayerMask.NameToLayer(sortingLayerName); // Optional
                     arrowHeads.Add(arrow.transform);
                 }
                 else

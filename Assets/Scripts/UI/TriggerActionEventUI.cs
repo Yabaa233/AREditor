@@ -30,7 +30,7 @@ public class TriggerActionEventUI : MonoBehaviour
         resultDropdown.onValueChanged.AddListener(i =>
         {
             data.actionType = (ActionType)i;
-            RefreshTargetVisibility(); // ← 更新目标UI可见性
+            RefreshTargetVisibility(); // ← Update target UI visibility
         });
 
         RefreshTargetVisibility();

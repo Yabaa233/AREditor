@@ -9,14 +9,10 @@ public class VFXDissolveCaller : MonoBehaviour
 
         if (controller == null)
         {
-            Debug.LogWarning("未找到 VFXDissolveRuntimeController 组件！");
+            Debug.LogWarning("Cant find VFXDissolveRuntimeController conp！");
             return;
         }
-
+        
         controller.SendMessage("TriggerDissolve");
-        // 或者更安全地调用：
-        // controller.Invoke("TriggerDissolve", 0f);
-        // 或者直接调用（如果是 public）：
-        // controller.TriggerDissolve(); ← 如果你把 TriggerDissolve 改成 public
     }
 }

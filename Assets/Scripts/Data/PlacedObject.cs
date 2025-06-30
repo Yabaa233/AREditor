@@ -50,7 +50,7 @@ public class PlacedObject : MonoBehaviour
         //     events = new(template.defaultEvents)
         // };
 
-        if(viewMode == ViewMode.Plane)
+        if (viewMode == ViewMode.Plane)
         {
             transform.GetComponent<PlacedObjectPlaneViewer>().enabled = true;
             transform.GetComponent<PlacedObjectPlaneViewer>().SetMarker(template.icon);
@@ -130,20 +130,19 @@ public class PlacedObject : MonoBehaviour
         initialized = true;
     }
 
-    // 用于 Odin 下拉菜单显示模板ID
+    // For Unity display, using Odin to show a dropdown menu of template IDs
     private IEnumerable<ValueDropdownItem<string>> GetAllTemplateIDs()
     {
         if (templateDatabase == null) yield break;
 
         foreach (var template in templateDatabase.templates)
         {
-            // 下拉显示内容："bomb_01 - 炸弹"
+            // Display format in dropdown: "bomb_01 - Bomb"
             string display = $"{template.templateID} . {template.templateName}";
             yield return new ValueDropdownItem<string>(display, template.templateID);
         }
     }
 
-    //TODO 销毁处理，比如从他者事件中移除
     void OnDestroy()
     {
 

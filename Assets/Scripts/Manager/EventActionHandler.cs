@@ -20,7 +20,7 @@ public class EventActionHandler : MonoBehaviour
     {
         Debug.Log("Enter");
         if (!onEnterRegistered) return;
-        // 只响应 Player
+        // Only responds to the Player
         if (!other.CompareTag("Player")) return;
         Debug.Log("is Player");
         HandleEvent(TriggerType.OnEnter);
@@ -29,7 +29,7 @@ public class EventActionHandler : MonoBehaviour
     private void OnTriggerExit(Collider other)
     {
         if (!onExitRegistered) return;
-        // 只响应 Player
+        // Only responds to the Player
         if (!other.CompareTag("Player")) return;
         HandleEvent(TriggerType.OnExit);
     }
@@ -44,15 +44,15 @@ public class EventActionHandler : MonoBehaviour
             {
                 case ActionType.Win:
                     Debug.Log($"[{name}] Triggered WIN");
-                    // 你的胜利逻辑
+                    // TODO: Win logic
                     break;
                 case ActionType.Lose:
                     Debug.Log($"[{name}] Triggered LOSE");
-                    // 你的失败逻辑
+                    // TODO: Lose logic
                     break;
                 case ActionType.Enable:
                     if (evt.targetObjectID == null) continue;
-                    // 更多处理
+                    // TODO: Need more
                     EditorManager.Instance.GetGameObjectByID(evt.targetObjectID).SetActive(true);
                     break;
                 case ActionType.Disable:

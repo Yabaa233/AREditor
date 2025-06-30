@@ -9,22 +9,22 @@ using Unity.EditorCoroutines.Editor;
 public class VFXDissolveController : MonoBehaviour
 {
     [Required] public VisualEffect vfx;
-    [LabelText("起始值")] public float startValue = 0f;
-    [LabelText("结束值")] public float endValue = 5f;
-    [LabelText("持续时间")] public float duration = 2f;
+    [LabelText("Start Value")] public float startValue = 0f;
+    [LabelText("End Value")] public float endValue = 5f;
+    [LabelText("Duration")] public float duration = 2f;
 
     private Coroutine coroutine;
 #if UNITY_EDITOR
     private EditorCoroutine coroutine_Editor;
 #endif
 
-    [Button("触发 Dissolve 渐变")]
+    [Button("Trigger Dissolve")]
     private void TriggerDissolve_Editor()
     {
 #if UNITY_EDITOR
         if (vfx == null)
         {
-            Debug.LogWarning("VFX 未赋值！");
+            Debug.LogWarning("Cant find VFX");
             return;
         }
 
@@ -55,7 +55,7 @@ public class VFXDissolveController : MonoBehaviour
     {
         if (vfx == null)
         {
-            Debug.LogWarning("VFX 未赋值！");
+            Debug.LogWarning("Cant find VFX");
             return;
         }
 

@@ -16,22 +16,22 @@ public class PlacedObjectInspector : MonoBehaviour
     {
         currentData = data;
 
-        // 初始 UI 状态同步
+        // Initialize UI state
         hiddenAtStartToggle.isOn = data.ifHiddenAtGameStart;
 
-        // 清空旧事件列表
+        // Clear old event list
         foreach (Transform child in eventListContainer)
         {
             Destroy(child.gameObject);
         }
 
-        // 显示事件列表
+        // Display event list
         foreach (var evt in data.events)
         {
             AddEventItemUI(evt);
         }
 
-        // 注册监听
+        // Register toggle listener
         hiddenAtStartToggle.onValueChanged.RemoveAllListeners();
         hiddenAtStartToggle.onValueChanged.AddListener(val =>
         {

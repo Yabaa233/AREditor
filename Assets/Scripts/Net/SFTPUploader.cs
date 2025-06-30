@@ -10,10 +10,10 @@ public class SFTPUploader : MonoBehaviour
             WebClient client = new WebClient();
             client.Credentials = new NetworkCredential("sftpuser", "yourpassword");
 
-            // 拼接 SFTP 地址（确保 IP 地址和目录正确）
+            // Build the full SFTP URL with the correct IP address and path
             string ftpUri = "sftp://150.65.60.21" + remotePath;
 
-            // 上传文件
+            // Upload file
             client.UploadFile(ftpUri, localPath);
             Debug.Log("File uploaded successfully!");
         }

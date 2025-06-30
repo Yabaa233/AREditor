@@ -3,7 +3,7 @@
 public class CameraDebugOverlay : MonoBehaviour
 {
     public Camera targetCamera;
-    public TopDownCameraController cameraController; // 引用控制器
+    public TopDownCameraController cameraController;
 
     [Header("Display Options")]
     public int fontSize = 32;
@@ -18,7 +18,7 @@ public class CameraDebugOverlay : MonoBehaviour
             targetCamera = Camera.main;
 
         if (cameraController == null)
-            cameraController = FindObjectOfType<TopDownCameraController>(); // 自动找
+            cameraController = FindObjectOfType<TopDownCameraController>();
 
         guiStyle = new GUIStyle
         {
