@@ -2,7 +2,7 @@ import subprocess
 import os
 #conda activate surfel_splatting
 
-# input_video = r"D:\School\AREditor\2DGs\2d-gaussian-splatting\all_data\input_vedio\bigDesk.mp4"
+# input_video = r"D:\School\AREditor\2DGs\2d-gaussian-splatting\all_data\input_vedio\7.03.mp4"
 # output_dir = r"D:\School\AREditor\2DGs\2d-gaussian-splatting\all_data\input_images"
 # script_path = r"d:\School\AREditor\2DGs\2d-gaussian-splatting\process\Vedio2Image.py"
 
@@ -10,11 +10,11 @@ import os
 #     "python", script_path,
 #     "--input", input_video,
 #     "--output", output_dir,
-#     "--max_frames", "150"
+#     "--max_frames", "300"
 # ]
 
 
-# image_path   = r"D:\School\AREditor\2DGs\2d-gaussian-splatting\all_data\input_images\bigDesk"
+# image_path   = r"D:\School\AREditor\2DGs\2d-gaussian-splatting\all_data\input_images\7.03"
 # output_base  = r"D:\School\AREditor\2DGs\2d-gaussian-splatting\all_data\input_colmap"
 # script_path = r"d:\School\AREditor\2DGs\2d-gaussian-splatting\process\Image2Colmap.py"
 
@@ -26,7 +26,7 @@ import os
 
 
 # # 输入路径（COLMAP 完成后的数据）
-# colmap_path  = r"D:\School\AREditor\2DGs\2d-gaussian-splatting\all_data\input_colmap\bigDesk"
+# colmap_path  = r"D:\School\AREditor\2DGs\2d-gaussian-splatting\all_data\input_colmap\7.03"
 # # 输出路径（训练结果、checkpoint 保存路径）
 # output_base  = r"D:\School\AREditor\2DGs\2d-gaussian-splatting\all_data\output_2dgs"
 # # 训练脚本路径
@@ -76,38 +76,38 @@ import os
 #     "--resolution", "1"
 # ]
 
-# 风格化 Structure Change
-script_path = r"D:\School\AREditor\2DGs\2d-gaussian-splatting\stylize_structure.py"
-colmap_path = r"D:\School\AREditor\2DGs\2d-gaussian-splatting\all_data\input_colmap\bigDesk"
-output_base = r"D:\School\AREditor\2DGs\2d-gaussian-splatting\all_data\output_stylized"
-checkpoint_path = r"D:\School\AREditor\2DGs\2d-gaussian-splatting\all_data\output_2dgs\bigDesk\chkpnt30000.pth"
-style_img_path = r"D:\School\AREditor\2DGs\2d-gaussian-splatting\all_data\stylize_sourceImage\mc.png"
+# # 风格化 with Structure Change 尝试
+# script_path = r"D:\School\AREditor\2DGs\2d-gaussian-splatting\stylize_structure.py"
+# colmap_path = r"D:\School\AREditor\2DGs\2d-gaussian-splatting\all_data\input_colmap\bigDesk"
+# output_base = r"D:\School\AREditor\2DGs\2d-gaussian-splatting\all_data\output_stylized"
+# checkpoint_path = r"D:\School\AREditor\2DGs\2d-gaussian-splatting\all_data\output_2dgs\bigDesk\chkpnt30000.pth"
+# style_img_path = r"D:\School\AREditor\2DGs\2d-gaussian-splatting\all_data\stylize_sourceImage\mc.png"
 
-# 自动提取最后一级文件夹名（如 loop）
-scene_name = os.path.basename(os.path.normpath(colmap_path))
+# # 自动提取最后一级文件夹名（如 loop）
+# scene_name = os.path.basename(os.path.normpath(colmap_path))
 
-# 提取 style 图像的文件名（无扩展名）
-style_name = os.path.splitext(os.path.basename(style_img_path))[0]  # 得到 "monochrome"
+# # 提取 style 图像的文件名（无扩展名）
+# style_name = os.path.splitext(os.path.basename(style_img_path))[0]  # 得到 "monochrome"
 
-# 构造完整输出路径：output_2dgs/loop_monochrome
-output_path = os.path.join(output_base, f"{scene_name}_{style_name}")
-os.makedirs(output_path, exist_ok=True)
+# # 构造完整输出路径：output_2dgs/loop_monochrome
+# output_path = os.path.join(output_base, f"{scene_name}_{style_name}")
+# os.makedirs(output_path, exist_ok=True)
 
-# 构建命令
-cmd = [
-    "python", script_path,
-    "--source_path", colmap_path,
-    "--model_path", output_path,
-    "--start_checkpoint", checkpoint_path,
-    "--style_img", style_img_path,
-    "--iterations", "34400",
-    "--resolution", "1",
-    "--optimize_iteration", "7000",
-]
+# # 构建命令
+# cmd = [
+#     "python", script_path,
+#     "--source_path", colmap_path,
+#     "--model_path", output_path,
+#     "--start_checkpoint", checkpoint_path,
+#     "--style_img", style_img_path,
+#     "--iterations", "34400",
+#     "--resolution", "1",
+#     "--optimize_iteration", "7000",
+# ]
 
-# # tsdf
+# tsdf
 # script_path = r"D:\School\AREditor\2DGs\2d-gaussian-splatting\render.py"
-# input_path = r"D:\School\AREditor\2DGs\2d-gaussian-splatting\all_data\output_stylized\bigDesk_mc"
+# input_path = r"D:\School\AREditor\2DGs\2d-gaussian-splatting\all_data\output_2dgs\7.03"
 # output_base = r"D:\School\AREditor\2DGs\2d-gaussian-splatting\all_data\output_mesh"
 
 # # 自动提取最后一级文件夹名（如 loop）
@@ -123,31 +123,34 @@ cmd = [
 #     "-m", input_path,
 #     "--output_dir", output_path,
 #     "--mesh_res", "256",
-#     "--iteration", "36000"
+#     "--iteration", "30000" //用7000反而杂乱的面更多，还是得30000，那后面的减面步骤也就还需要
 # ]
+
+# 用meshlab 保留一些预处理，不用转换吗？？
+script_path = r"D:\School\AREditor\2DGs\2d-gaussian-splatting\process\GetTex_meshlab.py"
+input_path = r"D:\School\AREditor\2DGs\2d-gaussian-splatting\all_data\output_mesh\7.02\train\ours_30000\fuse_post.ply"
+
+# 构建命令（注意参数格式）
+cmd = [
+    "conda", "run", "-n", "gaussian_splatting", "python", script_path,
+    "-input", input_path,
+]
 
 # # 用blender直接转fbx
-# script_path = r"D:\School\AREditor\2DGs\2d-gaussian-splatting\process\GetTex_meshlab.py"
-# input_path = r"D:\School\AREditor\2DGs\2d-gaussian-splatting\all_data\output_mesh\bigDesk\train\ours_40000\prehand\fuse_post_prehand.ply"
-
-# # 构建命令（注意参数格式）
-# cmd = [
-#     "conda", "run", "-n", "gaussian_splatting", "python", script_path,
-#     "-input", input_path,
-# ]
-
 # script_path = r"D:\School\AREditor\2DGs\2d-gaussian-splatting\process\convert_ply_to_fbx.py"
-# input_path = r"D:\School\AREditor\2DGs\2d-gaussian-splatting\all_data\output_mesh\bigDesk_256\train\ours_40000\fuse_post_prehand.ply"
+# input_path = r"D:\School\AREditor\2DGs\2d-gaussian-splatting\all_data\output_mesh\7.02\train\ours_30000\fuse_post.ply"
 # blender_path = r"C:\Program Files\Blender Foundation\Blender 4.3\blender.exe"
 
 # # 使用 Blender 运行脚本，并传递参数
 # cmd = [
 #     blender_path,
-#     "--background",  # 无界面模式
+#     "--background",
 #     "--python", script_path,
-#     "--",  # Blender 参数结束，后面的参数传给脚本
-#     input_path,  # 传递给脚本的第一个参数
+#     "--",
+#     "--input", input_path,  # ✅ 添加 --input 参数名
+#     # "--target_faces", "8000",  # ✅（可选）添加目标面数参数
 # ]
+
 
 # # 直接风格化贴图
 # script_path = r"D:\School\AREditor\2DGs\2d-gaussian-splatting\stylize_Tex.py"

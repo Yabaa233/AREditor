@@ -9,32 +9,32 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2b06dbbe2e3a1e24c95cdc995485667a, type: 3}
-  m_Name: Placed Object Template Database
+  m_Script: {fileID: 11500000, guid: 71d2621ad2e3420498211c82f4daac07, type: 3}
+  m_Name: New Placed Object Template Database
   m_EditorClassIdentifier: 
   templates:
   - templateID: 1
-    templateName: Boom
+    templateName: boom
     prefab: {fileID: 7138284100322932080, guid: 2a00ba457a45f224c8c16ab57277e46b, type: 3}
     icon: {fileID: 21300000, guid: e2fb9b036251cbd40aa3fd9152bd5420, type: 3}
     defaultEvents: []
   - templateID: 2
-    templateName: Button
+    templateName: button
     prefab: {fileID: 7138284100322932080, guid: f369da9fd25e8444c80a59756340c289, type: 3}
     icon: {fileID: 21300000, guid: ca429a81ce59f3542bc9b405acbe1a81, type: 3}
     defaultEvents: []
   - templateID: 3
-    templateName: Fire
+    templateName: fire
     prefab: {fileID: 7138284100322932080, guid: 814ee8c19d10f324f906d53617582c8d, type: 3}
     icon: {fileID: 21300000, guid: cc196f2a3be08e248a5dc19ab92ad006, type: 3}
     defaultEvents: []
   - templateID: 4
-    templateName: Chest
+    templateName: chest
     prefab: {fileID: 7138284100322932080, guid: aea448ee83918bf4fa7278ad3fdfcef0, type: 3}
     icon: {fileID: 21300000, guid: b04a89f00c958e242b38acd802c6106c, type: 3}
     defaultEvents: []
   - templateID: 5
-    templateName: Key
+    templateName: key
     prefab: {fileID: 7138284100322932080, guid: 4f32385eca85e5d4cbee50423dd7fea1, type: 3}
     icon: {fileID: 21300000, guid: e3dc68783919341458e70e2a3ed5ebc1, type: 3}
     defaultEvents: []

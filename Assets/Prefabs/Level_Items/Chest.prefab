@@ -133,8 +133,6 @@ MonoBehaviour:
   uiMarker: {fileID: 0}
   uiLinePrefab: {fileID: 790357206458180534, guid: d2346937b8e29854ea804a25c6f894e9, type: 3}
   uiArrowPrefab: {fileID: 2389555308410120932, guid: d5d52adf4ca848a4fb541a303d6f3890, type: 3}
-  winSprite: {fileID: 21300000, guid: 539f9fbd5f22815469d56e34a79d49fb, type: 3}
-  loseSprite: {fileID: 21300000, guid: b4ee7dcd551a258438ca26f821ca3db6, type: 3}
 --- !u!114 &2075635998053256839
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -147,13 +145,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b71e48f6c5952ea41a53d8540c58fc8b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  templateDatabase: {fileID: 11400000, guid: de583a8b193863744a64b6a2a8d5e637, type: 2}
+  templateDatabase: {fileID: 11400000, guid: 6b3916cac4d9a1842a25c6e2042d238b, type: 2}
   selectedTemplateID: 4
   runtimeData:
-    instance: {fileID: 0}
     templateID: 
+    ID: 
     ifHiddenAtGameStart: 0
     position: {x: 0, y: 0, z: 0}
     rotation: {x: 0, y: 0, z: 0}
     scale: {x: 0, y: 0, z: 0}
     events: []
+  viewMode: 0

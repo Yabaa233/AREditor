@@ -63,16 +63,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b71e48f6c5952ea41a53d8540c58fc8b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  templateDatabase: {fileID: 11400000, guid: de583a8b193863744a64b6a2a8d5e637, type: 2}
+  templateDatabase: {fileID: 11400000, guid: 6b3916cac4d9a1842a25c6e2042d238b, type: 2}
   selectedTemplateID: 3
   runtimeData:
-    instance: {fileID: 0}
     templateID: 
+    ID: 
     ifHiddenAtGameStart: 0
     position: {x: 0, y: 0, z: 0}
     rotation: {x: 0, y: 0, z: 0}
     scale: {x: 0, y: 0, z: 0}
     events: []
+  viewMode: 0
 --- !u!1001 &1573488815414076698
 PrefabInstance:
   m_ObjectHideFlags: 0
