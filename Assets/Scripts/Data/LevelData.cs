@@ -9,7 +9,10 @@ public class ObjectTemplateData
 {
     public string templateID;
     public string templateName;
-    public GameObject prefab;
+
+    public GameObject TwoDPrefab;
+    public GameObject ARPrefab;
+
     public Sprite icon;  //For 2D Editor UI
 
     public List<TriggerActionEventData> defaultEvents = new();

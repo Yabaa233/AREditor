@@ -95,7 +95,7 @@ GameObject:
   - component: {fileID: 5713449996337104556}
   - component: {fileID: 2075635998053256839}
   m_Layer: 0
-  m_Name: Boom
+  m_Name: Boom_2d
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -155,4 +155,3 @@ MonoBehaviour:
     rotation: {x: 0, y: 0, z: 0}
     scale: {x: 0, y: 0, z: 0}
     events: []
-  viewMode: 0

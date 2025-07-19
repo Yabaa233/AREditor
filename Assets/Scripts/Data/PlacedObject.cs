@@ -4,27 +4,27 @@ using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
 
-public enum ViewMode { Plane, AR }
+// public enum ViewMode { Plane, AR }
 
 public class PlacedObject : MonoBehaviour
 {
     [SerializeField, Required]
-    private PlacedObjectTemplateDatabase templateDatabase;
+    protected PlacedObjectTemplateDatabase templateDatabase;
 
     [ValueDropdown(nameof(GetAllTemplateIDs))]
     [SerializeField]
-    private string selectedTemplateID;
+    protected string selectedTemplateID;
 
     [SerializeField, ReadOnly]
     public PlacedObjectData runtimeData;
 
-    private bool initialized = false;
+    protected bool initialized = false;
 
     private PlacedObjectPlaneViewer viewer;
 
-    public ViewMode viewMode = ViewMode.Plane;
+    // public ViewMode viewMode = ViewMode.Plane;
 
-    public void InitializeFromJson()
+    public virtual void InitializeFromJson()
     {
 
         // if (templateDatabase == null)
@@ -50,46 +50,46 @@ public class PlacedObject : MonoBehaviour
         //     events = new(template.defaultEvents)
         // };
 
-        if (viewMode == ViewMode.Plane)
-        {
-            transform.GetComponent<PlacedObjectPlaneViewer>().enabled = true;
-            transform.GetComponent<PlacedObjectPlaneViewer>().SetMarker(template.icon);
-        }
-        else
-        {
-            transform.GetComponent<PlacedObjectPlaneViewer>().enabled = false;
-        }
+        // if (viewMode == ViewMode.Plane)
+        // {
+        transform.GetComponent<PlacedObjectPlaneViewer>().enabled = true;
+        transform.GetComponent<PlacedObjectPlaneViewer>().SetMarker(template.icon);
+        // }
+        // else
+        // {
+        //     transform.GetComponent<PlacedObjectPlaneViewer>().enabled = false;
+        // }
 
         initialized = true;
     }
 
-    void Start()
+    protected virtual void Start()
     {
         if (!initialized)
         {
             InitializeFromTemplate();
         }
 
-        if (ARSession.state == ARSessionState.SessionTracking)
-        {
-            // Debug.Log("AR mode");
-            viewMode = ViewMode.AR;
-        }
-        else
-        {
-            // Debug.Log("not AR mode");
-            viewMode = ViewMode.Plane;
-        }
+        // if (ARSession.state == ARSessionState.SessionTracking)
+        // {
+        //     // Debug.Log("AR mode");
+        //     viewMode = ViewMode.AR;
+        // }
+        // else
+        // {
+        //     // Debug.Log("not AR mode");
+        //     viewMode = ViewMode.Plane;
+        // }
 
-        if (viewMode == ViewMode.Plane)
-        {
-            transform.GetComponent<PlacedObjectPlaneViewer>().enabled = true;
-            viewer = gameObject.GetComponent<PlacedObjectPlaneViewer>();
-        }
-        else
-        {
-            transform.GetComponent<PlacedObjectPlaneViewer>().enabled = false;
-        }
+        // if (viewMode == ViewMode.Plane)
+        // {
+        transform.GetComponent<PlacedObjectPlaneViewer>().enabled = true;
+        viewer = gameObject.GetComponent<PlacedObjectPlaneViewer>();
+        // }
+        // else
+        // {
+        //     transform.GetComponent<PlacedObjectPlaneViewer>().enabled = false;
+        // }
     }
 
     public void InitializeFromTemplate()
@@ -117,15 +117,15 @@ public class PlacedObject : MonoBehaviour
             events = new(template.defaultEvents)
         };
 
-        if (viewMode == ViewMode.Plane)
-        {
-            transform.GetComponent<PlacedObjectPlaneViewer>().enabled = true;
-            transform.GetComponent<PlacedObjectPlaneViewer>().SetMarker(template.icon);
-        }
-        else
-        {
-            transform.GetComponent<PlacedObjectPlaneViewer>().enabled = false;
-        }
+        // if (viewMode == ViewMode.Plane)
+        // {
+        transform.GetComponent<PlacedObjectPlaneViewer>().enabled = true;
+        transform.GetComponent<PlacedObjectPlaneViewer>().SetMarker(template.icon);
+        // }
+        // else
+        // {
+        //     transform.GetComponent<PlacedObjectPlaneViewer>().enabled = false;
+        // }
 
         initialized = true;
     }

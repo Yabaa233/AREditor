@@ -5,6 +5,9 @@ using System.Linq;
 //using System.Windows.Forms;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.XR.ARFoundation;
+using UnityEngine.XR.Interaction.Toolkit.AR;
 
 /// <summary>
 /// Manager of 2D Eitor
@@ -20,12 +23,15 @@ public class EditorManager : singleton<EditorManager>
     public GameObject focusedObject;
 
     // Parent of level objects
-    private Transform levelParent;
+    [Header("Set at 2d interface")]
+    public Transform levelParent;
+
+    [Header("Set at AR interface")]
+    public ARPlacementInteractable ARplacement;
+    public ARAnchorManager anchorManager;
 
     void Start()
     {
-        levelParent = GameObject.FindGameObjectWithTag("LevelParent").transform;
-        if (levelParent is null) Debug.LogWarning("Cant find LevelParent at start");
     }
 
     /// <summary>
@@ -175,8 +181,18 @@ public class EditorManager : singleton<EditorManager>
         Debug.Log("Scene saved to: " + savePath);
     }
 
+    public void LoadSceneFromJsonAR(string fileName)
+    {
+        LoadSceneFromJson(fileName, true);
+    }
 
-    public void LoadSceneFromJson(string fileName)
+    public void LoadSceneFromJson2D(string fileName)
+    {
+        LoadSceneFromJson(fileName, false);
+    }
+
+
+    public void LoadSceneFromJson(string fileName,bool isAR)
     {
 
         if (levelParent is null)
@@ -210,13 +226,22 @@ public class EditorManager : singleton<EditorManager>
         foreach (var data in sceneData.objects)
         {
             var template = templateDB.GetTemplateByID(data.templateID);
-            if (template == null || template.prefab == null)
+            if (template == null || template.TwoDPrefab == null ||template.ARPrefab == null)
             {
                 Debug.LogWarning($"Template not found for ID: {data.templateID}");
                 continue;
             }
 
-            GameObject obj = Instantiate(template.prefab);
+            GameObject obj;
+            if (isAR)
+            {
+                obj = Instantiate(template.ARPrefab);
+            }
+            else
+            {
+                obj = Instantiate(template.TwoDPrefab);
+
+            }
             obj.transform.SetParent(levelParent, worldPositionStays: false); // Automatically apply parent’s TRS (Translation, Rotation, Scale)
 
             obj.transform.localPosition = data.position;
@@ -224,7 +249,7 @@ public class EditorManager : singleton<EditorManager>
             obj.transform.localScale = data.scale;
 
             // TODO: Handle initial visibility
-            obj.SetActive(!data.ifHiddenAtGameStart);
+            obj.SetActive(!data.ifHiddenAtGameStart); 
 
             // Set runtimeData
             var placed = obj.GetComponent<PlacedObject>();
@@ -235,12 +260,71 @@ public class EditorManager : singleton<EditorManager>
             }
 
             LevelObjects.Add(obj);
+
         }
 
         Debug.Log("Scene loaded from: " + fullPath);
 
         //TODO: Viewer in AR mode
+
+        //if(isAR&&levelParent is not null)
+        //{
+        //    if (levelParent.TryGetComponent(out MeshRenderer renderer))
+        //        renderer.enabled = false;
+
+        //    if (levelParent.parent != null && levelParent.parent.TryGetComponent(out BoxCollider collider))
+        //        collider.enabled = false;
+
+        //    if (ARplacement is not null) ARplacement.placementPrefab = null;
+        //}
     }
+
+    public void Set2AR()
+    {
+        foreach (var obj in LevelObjects)
+        {
+            if (obj == null) continue;
+
+            // Record the original world position and rotation
+            Vector3 worldPos = obj.transform.position;
+            Quaternion worldRot = obj.transform.rotation;
+
+            // Detach from the current parent (e.g., levelParent) and preserve world transform
+            obj.transform.SetParent(null, worldPositionStays: true);
+
+            // Reapply world position and rotation (for safety)
+            obj.transform.position = worldPos;
+            obj.transform.rotation = worldRot;
+
+            // Force a fixed local scale (e.g., default value)
+            obj.transform.localScale = Vector3.one;
+
+            // Add ARAnchor to improve tracking stability (if not already added)
+            if (anchorManager != null && obj.GetComponent<ARAnchor>() == null)
+            {
+                obj.AddComponent<ARAnchor>();
+            }
+        }
+
+        Debug.Log("✅ All objects moved to AR world space and anchors attached (scale reset)");
+
+        // Hide the levelParent visual and collider if present
+        if (levelParent != null)
+        {
+            if (levelParent.TryGetComponent(out MeshRenderer renderer))
+                renderer.enabled = false;
+
+            if (levelParent.parent != null && levelParent.parent.TryGetComponent(out BoxCollider collider))
+                collider.enabled = false;
+        }
+
+        // Disable ARPlacement behavior to avoid interference with loaded objects
+        if (ARplacement != null)
+        {
+            ARplacement.placementPrefab = null;
+        }
+    }
+
 
 
 
@@ -271,5 +355,11 @@ public class EditorManager : singleton<EditorManager>
 
         return newID;
     }
+
+    public void ChangeScene(string name)
+    {
+        SceneManager.LoadScene(name);
+    }
+
 
 }

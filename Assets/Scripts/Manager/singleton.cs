@@ -10,16 +10,15 @@ public class singleton<T> : MonoBehaviour where T : singleton<T>
         get { return instance; }
     }
 
-    protected virtual void Awake()  // Allow subclasses to override
+    protected virtual void Awake()
     {
-        if (instance != null)
+        if (instance != null && instance != this)
         {
             Destroy(gameObject);
+            return;
         }
-        else
-        {
-            instance = (T)this;
-        }
+
+        instance = (T)this;
     }
 
     public static bool IsInitialized    // Check if singleton has been initialized

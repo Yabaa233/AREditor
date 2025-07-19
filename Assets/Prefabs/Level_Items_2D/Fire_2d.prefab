@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 5713449996337104556}
   - component: {fileID: 2075635998053256839}
   m_Layer: 0
-  m_Name: Fire
+  m_Name: Fire_2d
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -73,7 +73,6 @@ MonoBehaviour:
     rotation: {x: 0, y: 0, z: 0}
     scale: {x: 0, y: 0, z: 0}
     events: []
-  viewMode: 0
 --- !u!1001 &1573488815414076698
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -85,6 +84,10 @@ PrefabInstance:
     - target: {fileID: 6167062138974328233, guid: b3205841b2c54e84e941859841c61959, type: 3}
       propertyPath: m_Name
       value: Camp fire
+      objectReference: {fileID: 0}
+    - target: {fileID: 6167062138974328233, guid: b3205841b2c54e84e941859841c61959, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6835935351536815891, guid: b3205841b2c54e84e941859841c61959, type: 3}
       propertyPath: m_LocalScale.x
@@ -163,6 +166,10 @@ PrefabInstance:
     - target: {fileID: 8374209163406573712, guid: b5c4d598badfa5645855c4c8be16818f, type: 3}
       propertyPath: m_Name
       value: Fire_PSys
+      objectReference: {fileID: 0}
+    - target: {fileID: 8374209163406573712, guid: b5c4d598badfa5645855c4c8be16818f, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8374209163406573714, guid: b5c4d598badfa5645855c4c8be16818f, type: 3}
       propertyPath: SizeModule.curve.scalar

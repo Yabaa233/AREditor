@@ -17,7 +17,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1134138576273985366
 Transform:
   m_ObjectHideFlags: 0
@@ -95,7 +95,7 @@ GameObject:
   - component: {fileID: 5713449996337104556}
   - component: {fileID: 2075635998053256839}
   m_Layer: 0
-  m_Name: Chest
+  m_Name: Chest_2d
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -155,4 +155,3 @@ MonoBehaviour:
     rotation: {x: 0, y: 0, z: 0}
     scale: {x: 0, y: 0, z: 0}
     events: []
-  viewMode: 0

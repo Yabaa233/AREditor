@@ -15,26 +15,31 @@ MonoBehaviour:
   templates:
   - templateID: 1
     templateName: boom
-    prefab: {fileID: 7138284100322932080, guid: 2a00ba457a45f224c8c16ab57277e46b, type: 3}
+    TwoDPrefab: {fileID: 7138284100322932080, guid: 2a00ba457a45f224c8c16ab57277e46b, type: 3}
+    ARPrefab: {fileID: 7138284100322932080, guid: 7f643bff9de86884caaf30a2bd13a93c, type: 3}
     icon: {fileID: 21300000, guid: e2fb9b036251cbd40aa3fd9152bd5420, type: 3}
     defaultEvents: []
   - templateID: 2
     templateName: button
-    prefab: {fileID: 7138284100322932080, guid: f369da9fd25e8444c80a59756340c289, type: 3}
+    TwoDPrefab: {fileID: 7138284100322932080, guid: f369da9fd25e8444c80a59756340c289, type: 3}
+    ARPrefab: {fileID: 7138284100322932080, guid: 4cde797e87ebd9e46bea705931863341, type: 3}
     icon: {fileID: 21300000, guid: ca429a81ce59f3542bc9b405acbe1a81, type: 3}
     defaultEvents: []
   - templateID: 3
     templateName: fire
-    prefab: {fileID: 7138284100322932080, guid: 814ee8c19d10f324f906d53617582c8d, type: 3}
+    TwoDPrefab: {fileID: 7138284100322932080, guid: 814ee8c19d10f324f906d53617582c8d, type: 3}
+    ARPrefab: {fileID: 7138284100322932080, guid: 37af02269e5dbfe4da5933182e96941e, type: 3}
     icon: {fileID: 21300000, guid: cc196f2a3be08e248a5dc19ab92ad006, type: 3}
     defaultEvents: []
   - templateID: 4
     templateName: chest
-    prefab: {fileID: 7138284100322932080, guid: aea448ee83918bf4fa7278ad3fdfcef0, type: 3}
+    TwoDPrefab: {fileID: 7138284100322932080, guid: aea448ee83918bf4fa7278ad3fdfcef0, type: 3}
+    ARPrefab: {fileID: 7138284100322932080, guid: 5312bab10ffd73340ab2b78204168e02, type: 3}
     icon: {fileID: 21300000, guid: b04a89f00c958e242b38acd802c6106c, type: 3}
     defaultEvents: []
   - templateID: 5
     templateName: key
-    prefab: {fileID: 7138284100322932080, guid: 4f32385eca85e5d4cbee50423dd7fea1, type: 3}
+    TwoDPrefab: {fileID: 7138284100322932080, guid: 4f32385eca85e5d4cbee50423dd7fea1, type: 3}
+    ARPrefab: {fileID: 7138284100322932080, guid: 9ad801a21f764dc49b6bb1759195f3af, type: 3}
     icon: {fileID: 21300000, guid: e3dc68783919341458e70e2a3ed5ebc1, type: 3}
     defaultEvents: []
