@@ -5,10 +5,10 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/Interface.unity
     guid: 6e6e03381b9ae5b4d953c76a1cf25d77
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/TestAR.unity
     guid: b5bd9407688ba5a4a8bd301762c536ea
   - enabled: 0
@@ -38,6 +38,9 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/TestPlyAR.unity
     guid: 195fe02e34a7b5c4b98f79f6250caff6
+  - enabled: 1
+    path: Assets/Scenes/EasyAR.unity
+    guid: 6aaa56fb4d9835c429add6af9da134af
   m_configObjects:
     EasyAR.Settings: {fileID: 11400000, guid: 4ab9e96f95bd1874a89ccc61b8297878, type: 2}
     Niantic.Lightship.AR.LightshipSettings: {fileID: 11400000, guid: a1779466bac34c643b19153e134e2489, type: 2}
