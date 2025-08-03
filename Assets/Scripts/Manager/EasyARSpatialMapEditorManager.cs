@@ -157,13 +157,13 @@ namespace Assets.Scripts.Manager
         /// </summary>
         public void ClearCurrentMap()
         {
+            ClearAllObjects();
+
             if (currentMapSession != null)
             {
                 currentMapSession.Dispose();
                 currentMapSession = null;
             }
-            
-            ClearAllObjects();
             
             isMapLocalized = false;
             isMapBuilding = false;
@@ -194,6 +194,10 @@ namespace Assets.Scripts.Manager
         {
             isEditMode = false;
             Debug.Log("[EasyAR Spatial Map Editor] 退出编辑模式");
+            if (autoSaveOnEdit)
+            {
+                SaveObjectsInfo();
+            }
         }
 
         /// <summary>
@@ -218,9 +222,14 @@ namespace Assets.Scripts.Manager
                 
                 // 添加到MapData的Props列表（与示例保持一致）
                 mapData.Props.Add(gameObject);
-                
+
                 OnObjectPlaced?.Invoke(gameObject);
-                
+
+                if (autoSaveOnEdit)
+                {
+                    SaveObjectsInfo();
+                }
+
                 Debug.Log($"[EasyAR Spatial Map Editor] 对象已放置: {gameObject.name} at {hitResult.Value}");
                 return true;
             }
@@ -254,6 +263,10 @@ namespace Assets.Scripts.Manager
                 {
                     mapData.Props.Add(obj);
                     Debug.Log($"[EasyAR Spatial Map Editor] 注册对象: {obj.name}");
+                    if (autoSaveOnEdit)
+                    {
+                        SaveObjectsInfo();
+                    }
                 }
             }
         }
@@ -271,6 +284,10 @@ namespace Assets.Scripts.Manager
                     mapData.Props.Remove(obj);
                     OnObjectRemoved?.Invoke(obj);
                     Debug.Log($"[EasyAR Spatial Map Editor] 注销对象: {obj.name}");
+                    if (autoSaveOnEdit)
+                    {
+                        SaveObjectsInfo();
+                    }
                 }
             }
         }
@@ -292,6 +309,10 @@ namespace Assets.Scripts.Manager
                 }
                 mapData.Props.Clear();
                 Debug.Log("[EasyAR Spatial Map Editor] 清除所有对象");
+                if (autoSaveOnEdit)
+                {
+                    SaveObjectsInfo();
+                }
             }
         }
 
