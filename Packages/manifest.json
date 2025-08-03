@@ -9,6 +9,7 @@
     }
   ],
   "dependencies": {
+    "com.boxqkrtm.ide.cursor": "https://github.com/boxqkrtm/com.unity.ide.cursor.git",
     "com.easyar.sense": "file:EasyARSenseUnityPlugin_4.6.5+3052.b2f1b028/com.easyar.sense-4.6.5+3052.b2f1b028.tgz",
     "com.nianticlabs.lightship": "https://github.com/niantic-lightship/ardk-upm.git",
     "com.unity.2d.sprite": "1.0.0",

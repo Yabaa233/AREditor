@@ -41,7 +41,7 @@ public class ARPlacedObject : PlacedObject
         if (rotation) rotation.enabled = enable;
     }
 
-    private void InitializeFromTemplateARSafe()
+    protected void InitializeFromTemplateARSafe()
     {
         if (templateDatabase == null)
         {
