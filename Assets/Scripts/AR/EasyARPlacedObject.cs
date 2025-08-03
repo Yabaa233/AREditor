@@ -20,10 +20,13 @@ public class EasyARPlacedObject : ARPlacedObject
     private ARTranslationInteractable translation;
     private ARScaleInteractable scale;
     private ARRotationInteractable rotation;
-    
+
     // EasyAR空间地图相关
     private bool isPlacedOnMap = false;
     private Vector3 mapPlacementPosition;
+
+    private Renderer[] renderers;
+    private Color[] originalColors;
 
     protected override void Start()
     {
@@ -49,6 +52,13 @@ public class EasyARPlacedObject : ARPlacedObject
         translation = GetComponent<ARTranslationInteractable>() ?? gameObject.AddComponent<ARTranslationInteractable>();
         scale = GetComponent<ARScaleInteractable>() ?? gameObject.AddComponent<ARScaleInteractable>();
         rotation = GetComponent<ARRotationInteractable>() ?? gameObject.AddComponent<ARRotationInteractable>();
+
+        renderers = GetComponentsInChildren<Renderer>();
+        originalColors = new Color[renderers.Length];
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            originalColors[i] = renderers[i].material.color;
+        }
     }
 
     private void EnableARInteraction(bool enable)
@@ -188,30 +198,31 @@ public class EasyARPlacedObject : ARPlacedObject
     /// </summary>
     private void Update()
     {
-        // 如果启用了空间地图放置，处理触摸输入
+        var spatialMapManager = EasyARSpatialMapEditorManager.Instance;
+        if (spatialMapManager == null || !spatialMapManager.IsEditMode)
+        {
+            return;
+        }
+
         if (useSpatialMapPlacement && Input.touchCount > 0)
         {
             var touch = Input.GetTouch(0);
-            
+
             if (touch.phase == TouchPhase.Began)
             {
-                // 检查是否点击了当前对象
                 Ray ray = Camera.main.ScreenPointToRay(touch.position);
                 RaycastHit hit;
-                
+
                 if (Physics.Raycast(ray, out hit) && hit.collider.gameObject == gameObject)
                 {
-                    // 选中对象
                     OnSelected();
                 }
                 else if (isPlacedOnMap)
                 {
-                    // 移动对象到新位置
                     MoveOnSpatialMap(touch.position);
                 }
                 else
                 {
-                    // 放置新对象
                     PlaceOnSpatialMap(touch.position);
                 }
             }
@@ -224,6 +235,10 @@ public class EasyARPlacedObject : ARPlacedObject
     public void OnSelected()
     {
         Debug.Log($"对象被选中: {gameObject.name}");
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            renderers[i].material.color = Color.yellow;
+        }
     }
 
     /// <summary>
@@ -232,6 +247,10 @@ public class EasyARPlacedObject : ARPlacedObject
     public void OnDeselected()
     {
         Debug.Log($"对象被取消选中: {gameObject.name}");
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            renderers[i].material.color = originalColors[i];
+        }
     }
 
     private void OnDestroy()
