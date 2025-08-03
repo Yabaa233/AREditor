@@ -228,11 +228,50 @@ public class EasyARSpatialMapUIController : MonoBehaviour
     /// </summary>
     private void OnObjectItemClicked(string templateID)
     {
-        // 这里可以显示对象放置提示，或者直接进入放置模式
+        // 通过模板ID找到对应的对象模板并实例化其AR预制体
         Debug.Log($"选择对象模板: {templateID}");
-        
-        // 可以在这里实现拖拽放置逻辑
-        // 或者切换到放置模式
+
+        var templateDB = EditorManager.Instance.templateDB;
+        if (templateDB == null)
+        {
+            Debug.LogWarning("Template database not found");
+            return;
+        }
+
+        var template = templateDB.GetTemplateByID(templateID);
+        if (template == null || template.ARPrefab == null)
+        {
+            Debug.LogWarning($"Template or ARPrefab not found for ID: {templateID}");
+            return;
+        }
+
+        // 实例化AR预制体
+        GameObject newObject = Instantiate(template.ARPrefab);
+
+        // 为实例添加 EasyARPlacedObject 组件（若不存在）
+        if (newObject.GetComponent<EasyARPlacedObject>() == null)
+        {
+            newObject.AddComponent<EasyARPlacedObject>();
+        }
+
+        // 在屏幕中心放置对象
+        Vector2 screenCenter = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
+        bool success = EasyARSpatialMapEditorManager.Instance.PlaceGameObjectOnMap(newObject, screenCenter);
+
+        if (success)
+        {
+            // 放置成功后关闭对象面板
+            if (isObjectPaletteOpen)
+            {
+                OnToggleObjectPaletteClicked();
+            }
+        }
+        else
+        {
+            // 放置失败销毁对象并提示
+            Destroy(newObject);
+            Debug.LogWarning("对象放置失败，请尝试其他位置");
+        }
     }
 
     /// <summary>
