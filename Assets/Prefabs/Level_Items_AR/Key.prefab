@@ -164,8 +164,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Size: {x: 0.3, y: 0.6, z: 0.3}
+  m_Center: {x: 0, y: 0.1, z: 0}
 --- !u!114 &3603339826083342813
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -622,13 +622,6 @@ MonoBehaviour:
     scale: {x: 0, y: 0, z: 0}
     events: []
   useSpatialMapPlacement: 1
-  enableSelection: 1
-  enableTranslation: 1
-  enableRotation: 1
-  enableScaling: 1
-  rotationSpeed: 180
-  scaleSpeed: 1
-  scaleRange: {x: 0.5, y: 3}
 --- !u!1001 &6334918765172938799
 PrefabInstance:
   m_ObjectHideFlags: 0

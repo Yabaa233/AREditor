@@ -424,25 +424,25 @@ namespace Assets.Scripts.Manager
 
                 OnObjectPlaced?.Invoke(gameObject);
 
-                // 新增：如果对象包含 ARPlacedObject，设置为当前选中对象并启用手势控制
-                try
-                {
-                    var placedComp = gameObject.GetComponent<ARPlacedObject>();
-                    if (placedComp != null)
-                    {
-                        // 首先取消所有其他对象的选择
-                        DeselectAllObjects();
+                //// 新增：如果对象包含 ARPlacedObject，设置为当前选中对象并启用手势控制
+                //try
+                //{
+                //    var placedComp = gameObject.GetComponent<ARPlacedObject>();
+                //    if (placedComp != null)
+                //    {
+                //        // 首先取消所有其他对象的选择
+                //        DeselectAllObjects();
 
-                        // 设置为当前选中对象
-                        SetCurrentSelectedObject(placedComp);
+                //        // 设置为当前选中对象
+                //        SetCurrentSelectedObject(placedComp);
 
-                        Debug.Log("[EasyAR] 放置后自动进入编辑模式并设为当前选中对象");
-                    }
-                }
-                catch (System.Exception ex)
-                {
-                    Debug.LogWarning($"[EasyAR] 放置后尝试设置选中状态失败: {ex.Message}");
-                }
+                //        Debug.Log("[EasyAR] 放置后自动进入编辑模式并设为当前选中对象");
+                //    }
+                //}
+                //catch (System.Exception ex)
+                //{
+                //    Debug.LogWarning($"[EasyAR] 放置后尝试设置选中状态失败: {ex.Message}");
+                //}
 
                 if (autoSaveOnEdit)
                 {
