@@ -56,5 +56,24 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "AREditor.sln"
+
+    // dotnet / solution
+    "dotnet.defaultSolution": "AREditor.sln",
+    "dotnet.preferCSharpExtension": true,
+
+    // --- Added formatting settings ---
+    // 在保存时自动格式化
+    "editor.formatOnSave": true,
+
+    // C# 默认格式化器（使用 OmniSharp / Roslyn 格式化）
+    "[csharp]": {
+        "editor.defaultFormatter": "ms-dotnettools.csharp"
+    },
+
+    // 可选：如果你想使用 CSharpier，改为 "csharpier.csharpier-vscode"
+    // "[csharp]": { "editor.defaultFormatter": "csharpier.csharpier-vscode" },
+
+    // 推荐在 CI 或本地使用 dotnet-format，保持代码风格一致
+    // ...existing code...
 }
+

@@ -4866,7 +4866,6 @@ MonoBehaviour:
   LevelObjects: []
   focusedObject: {fileID: 0}
   levelParent: {fileID: 118738132}
-  ARplacement: {fileID: 0}
 --- !u!1 &1537666118
 GameObject:
   m_ObjectHideFlags: 0

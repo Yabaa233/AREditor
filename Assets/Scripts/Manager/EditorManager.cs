@@ -26,9 +26,9 @@ public class EditorManager : singleton<EditorManager>
     [Header("Set at 2d interface")]
     public Transform levelParent;
 
-    [Header("Set at AR interface")]
-    public ARPlacementInteractable ARplacement;
-    public ARAnchorManager anchorManager;
+    // [Header("Set at AR interface")]
+    // public ARPlacementInteractable ARplacement;
+    // public ARAnchorManager anchorManager;
 
     void Start()
     {
@@ -299,11 +299,11 @@ public class EditorManager : singleton<EditorManager>
             // Force a fixed local scale (e.g., default value)
             obj.transform.localScale = Vector3.one;
 
-            // Add ARAnchor to improve tracking stability (if not already added)
-            if (anchorManager != null && obj.GetComponent<ARAnchor>() == null)
-            {
-                obj.AddComponent<ARAnchor>();
-            }
+            // // Add ARAnchor to improve tracking stability (if not already added)
+            // if (anchorManager != null && obj.GetComponent<ARAnchor>() == null)
+            // {
+            //     obj.AddComponent<ARAnchor>();
+            // }
         }
 
         Debug.Log("✅ All objects moved to AR world space and anchors attached (scale reset)");
@@ -318,11 +318,11 @@ public class EditorManager : singleton<EditorManager>
                 collider.enabled = false;
         }
 
-        // Disable ARPlacement behavior to avoid interference with loaded objects
-        if (ARplacement != null)
-        {
-            ARplacement.placementPrefab = null;
-        }
+        // // Disable ARPlacement behavior to avoid interference with loaded objects
+        // if (ARplacement != null)
+        // {
+        //     ARplacement.placementPrefab = null;
+        // }
     }
 
 

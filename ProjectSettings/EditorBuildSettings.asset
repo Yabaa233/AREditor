@@ -24,7 +24,7 @@ EditorBuildSettings:
     path: Assets/Samples/EasyAR Sense Unity Plugin/4.6.5+3052.b2f1b028/WorldSensing
       SpatialMap_Sparse_ImageTarget/Scenes/SpatialMap_Sparse_ImageTarget.unity
     guid: a00e0fae6db8318408c0ccaf046075fa
-  - enabled: 1
+  - enabled: 0
     path: Assets/Samples/EasyAR Sense Unity Plugin/4.6.5+3052.b2f1b028/WorldSensing
       SpatialMap_SparseSpatialMap/Scenes/SpatialMap_SparseSpatialMap.unity
     guid: 645e981584f1b444d94efe78e24ee749
@@ -38,7 +38,7 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/TestPlyAR.unity
     guid: 195fe02e34a7b5c4b98f79f6250caff6
-  - enabled: 0
+  - enabled: 1
     path: Assets/Scenes/EasyAR.unity
     guid: 6aaa56fb4d9835c429add6af9da134af
   m_configObjects:
