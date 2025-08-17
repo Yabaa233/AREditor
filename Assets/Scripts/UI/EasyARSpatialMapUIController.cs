@@ -22,6 +22,7 @@ public class EasyARSpatialMapUIController : MonoBehaviour
     public Button btnToggleObjectPalette;
 
     [Header("Status UI")]
+    public GameObject debugArea;
     public Text statusText, mapInfoText, editorStatusText;
 
     [Header("Settings")]
@@ -34,7 +35,7 @@ public class EasyARSpatialMapUIController : MonoBehaviour
     private void Start()
     {
         spatialMapManager = EasyARSpatialMapEditorManager.Instance;
-        if (spatialMapManager == null)                                                                                                                                                                                                                                                              
+        if (spatialMapManager == null)
         {
             Debug.LogError("EasyARSpatialMapEditorManager not found!");
             return;
@@ -549,4 +550,10 @@ public class EasyARSpatialMapUIController : MonoBehaviour
         EasyARSpatialMapEditorManager.Instance.SaveObjectsInfo();
         OnSaveMapClicked();
     }
+
+    public void ChangeDebugInfo()
+    {
+        debugArea.SetActive(!debugArea.activeSelf);
+    }
+
 }
