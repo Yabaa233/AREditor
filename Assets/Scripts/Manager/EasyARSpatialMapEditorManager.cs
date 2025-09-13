@@ -13,7 +13,6 @@ namespace Assets.Scripts.Manager
     public class EasyARSpatialMapEditorManager : singleton<EasyARSpatialMapEditorManager>
     {
         [Header("EasyAR Components")]
-        public ARSession arSession;
         public SparseSpatialMapWorkerFrameFilter mapWorker;
         public SparseSpatialMapController mapControllerPrefab;
 
@@ -49,12 +48,24 @@ namespace Assets.Scripts.Manager
         private Common.TouchController touchController;
         private bool isDragging = false;
 
+        private GameObject easyarObject;
+        private ARSession arSession;  // 私有变量，与官方示例一致
+        private Camera arCamera;      // 缓存AR相机引用
+        [Header("EasyAR Session Object")]
+        public GameObject EasyARSession;
+
         private void Start()
         {
+            // 在应用启动时就锁定屏幕方向（这是最可靠的方法）
+            Screen.orientation = ScreenOrientation.LandscapeLeft;
+            Screen.autorotateToLandscapeLeft = true;
+            Screen.autorotateToLandscapeRight = true;
+            Screen.autorotateToPortrait = false;
+            Screen.autorotateToPortraitUpsideDown = false;
+
             InitializeEditor();
             LoadAvailableMaps();
         }
-
         private void Update()
         {
             // 在建图过程中，确保点云可视化正确显示累积的地图数据
@@ -85,7 +96,7 @@ namespace Assets.Scripts.Manager
         /// </summary>
         private void HandleObjectSelection()
         {
-            if (!isEditMode || Camera.main == null)
+            if (!isEditMode || arCamera == null)
                 return;
 
             // 处理触摸输入
@@ -109,11 +120,10 @@ namespace Assets.Scripts.Manager
         /// </summary>
         private void ProcessSelectionInput(Vector2 screenPosition)
         {
-            // Ray ray = Camera.main.ScreenPointToRay(screenPosition);
-            Camera arCamera = currentMapSession?.ARSession?.Assembly?.Camera;
+            // 统一使用AR相机进行射线检测
             if (arCamera == null)
             {
-                Debug.LogWarning("[EasyAR] 当前ARSession未找到有效相机，无法进行射线检测");
+                Debug.LogWarning("[EasyAR] AR相机未找到，无法进行射线检测");
                 DeselectAllObjects();
                 return;
             }
@@ -156,10 +166,22 @@ namespace Assets.Scripts.Manager
             // 应用视觉反馈
             ApplySelectionVisual(obj, true);
 
-            // 启用 TouchController
-            if (touchController != null && Camera.main != null)
+            // 启用 TouchController - 确保相机已就绪
+            if (touchController != null && arCamera != null && arCamera.isActiveAndEnabled)
             {
-                touchController.TurnOn(obj.transform, Camera.main, true, true, true, true);
+                // 延后到下一帧启动TouchController，确保相机完全就绪
+                StartCoroutine(EnableTouchControllerNextFrame(obj));
+            }
+        }
+
+        private System.Collections.IEnumerator EnableTouchControllerNextFrame(ARPlacedObject obj)
+        {
+            yield return null; // 等一帧
+
+            // 再次检查相机状态
+            if (touchController != null && arCamera != null && arCamera.isActiveAndEnabled && obj != null)
+            {
+                touchController.TurnOn(obj.transform, arCamera, true, true, true, true);
                 Debug.Log($"[EasyAR] 选中对象: {obj.name}");
             }
         }
@@ -237,12 +259,19 @@ namespace Assets.Scripts.Manager
         /// </summary>
         public void StartMapBuilding()
         {
-            if (currentMapSession != null)
-            {
-                currentMapSession.Dispose();
-            }
+            // 先清理旧会话
+            DestroySession();
 
-            currentMapSession = new MapSession(arSession, mapWorker, null);
+            // 延迟创建新会话
+            Invoke(nameof(DelayedStartBuilding), 0.1f);
+
+            Debug.Log("[EasyAR Spatial Map Editor] 开始构建地图流程");
+        }
+
+        private void DelayedStartBuilding()
+        {
+            // 创建新会话用于构建（传入空列表或 null）
+            CreateSession();
             currentMapSession.SetupMapBuilder(mapControllerPrefab);
 
             // 设置初始的点云显示状态
@@ -256,31 +285,115 @@ namespace Assets.Scripts.Manager
             isEditMode = false;
 
             OnMapBuildingStarted?.Invoke();
-            Debug.Log("[EasyAR Spatial Map Editor] 开始构建地图");
+            Debug.Log("[EasyAR Spatial Map Editor] 地图构建会话创建完成");
         }
 
         /// <summary>
-        /// 加载现有地图
+        /// 按照官方示例的方式重构加载流程
         /// </summary>
         public void LoadMap(MapMeta mapMeta)
         {
-            if (currentMapSession != null)
-            {
-                currentMapSession.Dispose();
-            }
+            // 1. 先销毁旧会话
+            DestroySession();
 
-            currentMapSession = new MapSession(arSession, mapWorker, new List<MapMeta> { mapMeta });
+            // 2. 等一帧再创建新会话（但用Invoke而不是协程）
+            Invoke(nameof(DelayedCreateAndLoad), 0.1f);
+
+            // 保存参数供延迟调用使用
+            _pendingMapMeta = mapMeta;
+
+            Debug.Log($"[EasyAR] 开始加载地图: {mapMeta.Map.Name}");
+        }
+
+        private MapMeta _pendingMapMeta;
+
+        private void DelayedCreateAndLoad()
+        {
+            if (_pendingMapMeta == null) return;
+
+            // 3. 创建新会话
+            CreateSession(new List<MapMeta> { _pendingMapMeta });
+
+            // 4. 直接调用 MapSession 的 LoadMapMeta（官方方式）
             currentMapSession.LoadMapMeta(mapControllerPrefab, showPointCloud);
+
+            // 5. 等待本地化
+            StartCoroutine(WaitForLocalization());
+
+            Debug.Log($"[EasyAR] 地图会话创建完成: {_pendingMapMeta.Map.Name}");
+            _pendingMapMeta = null;
+        }
+
+        /// <summary>
+        /// 创建地图会话（完全按照官方示例）
+        /// </summary>
+        private void CreateSession(List<MapMeta> selectedMaps = null)
+        {
+            // 完全按照官方示例的方式，不添加任何额外设置
+            easyarObject = Instantiate(EasyARSession);
+            easyarObject.SetActive(true);
+            arSession = easyarObject.GetComponent<ARSession>();
+            mapWorker = easyarObject.GetComponentInChildren<SparseSpatialMapWorkerFrameFilter>();
+
+            // 缓存AR相机引用
+            arCamera = arSession?.Assembly?.Camera;
+
+            // 立刻锁一次屏幕方向
+            ForceLandscapeLock();
+
+            // 显式重置WorldRoot/AR相机父节点旋转
+            ResetWorldRootTransform();
+
+            currentMapSession = new MapSession(arSession, mapWorker, selectedMaps);
 
             isMapBuilding = false;
             isMapLocalized = false;
             isEditMode = false;
 
-            // 监听本地化状态
-            StartCoroutine(WaitForLocalization());
+            // 下一帧再锁一次，避免竞态
+            StartCoroutine(ReapplyOrientationNextFrame());
 
-            Debug.Log($"[EasyAR Spatial Map Editor] 加载地图: {mapMeta.Map.Name}");
+            Debug.Log($"[EasyAR] 创建地图会话，地图数量: {selectedMaps?.Count ?? 0}，屏幕方向: {Screen.orientation}");
         }
+
+        private void ResetWorldRootTransform()
+        {
+            // 简化实现：直接重置AR相机的父节点或easyarObject本身
+            Transform root = null;
+
+            if (arCamera != null && arCamera.transform.parent != null)
+            {
+                root = arCamera.transform.parent;
+            }
+            else if (easyarObject != null)
+            {
+                root = easyarObject.transform;
+            }
+
+            if (root != null)
+            {
+                root.localPosition = Vector3.zero;
+                root.localRotation = Quaternion.identity;
+                root.localScale = Vector3.one;
+                Debug.Log("[EasyAR] 重置AR根节点变换");
+            }
+        }
+
+        private void ForceLandscapeLock()
+        {
+            Screen.orientation = ScreenOrientation.LandscapeLeft;
+            Screen.autorotateToLandscapeLeft = true;
+            Screen.autorotateToLandscapeRight = true;
+            Screen.autorotateToPortrait = false;
+            Screen.autorotateToPortraitUpsideDown = false;
+        }
+
+        private System.Collections.IEnumerator ReapplyOrientationNextFrame()
+        {
+            yield return null; // 等一帧
+            ForceLandscapeLock();
+        }        // 删除这个方法，直接在 LoadMap 中调用 currentMapSession.LoadMapMeta
+        // private void LoadMapMeta() 方法已移除，按官方示例直接调用
 
         /// <summary>
         /// 保存当前地图
@@ -634,13 +747,33 @@ namespace Assets.Scripts.Manager
         /// </summary>
         private void RestoreObjectsFromMapMeta()
         {
-            if (currentMapSession == null || currentMapSession.Maps.Count == 0)
+            Debug.Log("[EasyAR] RestoreObjectsFromMapMeta 开始");
+
+            if (currentMapSession == null)
             {
-                Debug.LogWarning("[EasyAR Spatial Map Editor] 无法恢复对象：没有地图会话");
+                Debug.LogWarning("[EasyAR Spatial Map Editor] 无法恢复对象：currentMapSession is null");
+                return;
+            }
+
+            if (currentMapSession.Maps == null)
+            {
+                Debug.LogWarning("[EasyAR Spatial Map Editor] 无法恢复对象：currentMapSession.Maps is null");
+                return;
+            }
+
+            if (currentMapSession.Maps.Count == 0)
+            {
+                Debug.LogWarning("[EasyAR Spatial Map Editor] 无法恢复对象：currentMapSession.Maps.Count == 0");
                 return;
             }
 
             var mapData = currentMapSession.Maps[0];
+            if (mapData == null)
+            {
+                Debug.LogError("[EasyAR Spatial Map Editor] 无法恢复对象：mapData is null");
+                return;
+            }
+
             if (mapData.Meta?.Props == null || mapData.Meta.Props.Count == 0)
             {
                 Debug.Log("[EasyAR Spatial Map Editor] 没有保存的对象需要恢复");
@@ -812,6 +945,142 @@ namespace Assets.Scripts.Manager
             ClearAllObjects();
 
             base.OnDestroy();
+        }
+
+        /// <summary>
+        /// 根据 MapMeta 删除对应的地图和对象数据
+        /// </summary>
+        public bool DeleteMap(MapMeta mapMeta)
+        {
+            if (mapMeta?.Map == null)
+            {
+                Debug.LogError("[EasyAR] 删除失败：地图元数据无效");
+                return false;
+            }
+
+            string mapID = mapMeta.Map.ID;
+            string mapName = mapMeta.Map.Name;
+
+            Debug.Log($"[EasyAR] 开始删除地图: {mapName} (ID: {mapID})");
+
+            try
+            {
+                // 1. 如果当前正在使用这个地图，先清除
+                if (currentMapSession != null && currentMapSession.Maps.Count > 0)
+                {
+                    var currentMapMeta = currentMapSession.Maps[0].Meta;
+                    if (currentMapMeta?.Map?.ID == mapID)
+                    {
+                        Debug.Log("[EasyAR] 正在删除当前使用的地图，先清除会话");
+                        ClearCurrentMap();
+                    }
+                }
+
+                // 2. 从内存列表中移除
+                availableMaps.RemoveAll(m => m?.Map?.ID == mapID);
+
+                // 3. 删除所有相关文件（稀疏地图 + 对象数据）
+                bool filesDeleted = DeleteMapFiles(mapID);
+
+                if (filesDeleted)
+                {
+                    Debug.Log($"[EasyAR] 地图删除成功: {mapName}");
+                    return true;
+                }
+                else
+                {
+                    Debug.LogWarning($"[EasyAR] 地图删除部分成功: {mapName}");
+                    return true; // 内存已清除就算成功
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[EasyAR] 删除地图失败: {mapName}, 错误: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 删除地图相关的所有文件（稀疏地图 + 对象数据）
+        /// </summary>
+        private bool DeleteMapFiles(string mapID)
+        {
+            string mapFolder = System.IO.Path.Combine(Application.persistentDataPath, "SparseSpatialMap");
+
+            if (!System.IO.Directory.Exists(mapFolder))
+            {
+                Debug.LogWarning("[EasyAR] 地图文件夹不存在");
+                return true;
+            }
+
+            bool allDeleted = true;
+
+            try
+            {
+                // 删除所有以 mapID 开头的文件（包括 .meta, .map, 以及可能的对象数据文件）
+                var allFiles = System.IO.Directory.GetFiles(mapFolder, mapID + "*");
+
+                foreach (var file in allFiles)
+                {
+                    try
+                    {
+                        System.IO.File.Delete(file);
+                        Debug.Log($"[EasyAR] 删除文件: {System.IO.Path.GetFileName(file)}");
+                    }
+                    catch (System.Exception ex)
+                    {
+                        Debug.LogWarning($"[EasyAR] 删除文件失败: {file}, 错误: {ex.Message}");
+                        allDeleted = false;
+                    }
+                }
+
+                Debug.Log($"[EasyAR] 删除了 {allFiles.Length} 个文件");
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[EasyAR] 删除文件时发生错误: {ex.Message}");
+                allDeleted = false;
+            }
+
+            return allDeleted;
+        }
+
+        //TODO 跨状态时记得销毁，即编辑，创建等
+        public void DestroySession()
+        {
+            // 停止所有协程，防止协程冲突
+            if (gameObject.activeInHierarchy)
+            {
+                StopAllCoroutines();
+            }
+
+            // 安全清理静态变量
+            if (currentSelectedObject != null)
+            {
+                currentSelectedObject = null;
+            }
+
+            if (currentMapSession != null)
+            {
+                currentMapSession.Dispose();
+                currentMapSession = null;
+            }
+
+            // 完全按照官方示例：不设置easyarObject = null
+            if (easyarObject)
+            {
+                Destroy(easyarObject);
+            }
+
+            // 清理AR相机引用
+            arCamera = null;
+
+            // 清理相关状态
+            isMapLocalized = false;
+            isMapBuilding = false;
+            isEditMode = false;
+
+            Debug.Log("[EasyAR] Session 已销毁，状态已重置");
         }
     }
 }
