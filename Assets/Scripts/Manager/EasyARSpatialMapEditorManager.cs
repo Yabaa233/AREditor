@@ -1082,5 +1082,73 @@ namespace Assets.Scripts.Manager
 
             Debug.Log("[EasyAR] Session 已销毁，状态已重置");
         }
+
+        /// <summary>
+        /// 获取AR相机（供UI组件使用）
+        /// </summary>
+        public Camera GetARCamera()
+        {
+            return arCamera;
+        }
+
+        /// <summary>
+        /// 使用稀疏点云进行射线检测（供拖拽放置使用）
+        /// </summary>
+        /// <param name="normalizedScreenPosition">归一化的屏幕坐标 (0-1)</param>
+        /// <returns>射线击中的世界坐标位置</returns>
+        public easyar.Optional<Vector3> HitTestSparsePointCloud(Vector2 normalizedScreenPosition)
+        {
+            if (currentMapSession == null)
+            {
+                Debug.LogWarning("[EasyAR] 当前没有活动的地图会话");
+                return new easyar.Optional<Vector3>();
+            }
+
+            return currentMapSession.HitTestOne(normalizedScreenPosition);
+        }
+
+        /// <summary>
+        /// 注册已放置的对象到指定位置
+        /// </summary>
+        /// <param name="obj">要注册的游戏对象</param>
+        /// <param name="position">世界坐标位置</param>
+        public void RegisterPlacedObjectAtPosition(GameObject obj, Vector3 position)
+        {
+            if (obj == null) return;
+
+            // 设置对象位置
+            obj.transform.position = position;
+
+            // 确保对象有 ARPlacedObject 组件
+            var arPlacedObject = obj.GetComponent<ARPlacedObject>();
+            if (arPlacedObject == null)
+            {
+                arPlacedObject = obj.AddComponent<ARPlacedObject>();
+            }
+
+            // 设置对象的唯一ID（如果ARPlacedObject有这个字段）
+            // arPlacedObject.objectID = System.Guid.NewGuid().ToString();
+
+            // 将对象挂载到地图控制器下
+            if (currentMapSession?.Maps?.Count > 0)
+            {
+                var mapController = currentMapSession.Maps[0].Controller;
+                if (mapController != null)
+                {
+                    obj.transform.SetParent(mapController.transform);
+                }
+            }
+
+            // 触发对象放置事件
+            OnObjectPlaced?.Invoke(obj);
+
+            Debug.Log($"[EasyAR] 注册放置对象: {obj.name} 在位置: {position}");
+
+            // 如果开启了自动保存，保存地图
+            if (autoSaveOnEdit)
+            {
+                SaveCurrentMap();
+            }
+        }
     }
 }

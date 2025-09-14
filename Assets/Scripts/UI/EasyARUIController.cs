@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Assets.Scripts.Manager;
 using UnityEngine;
+using UnityEngine.UI;
 public class EasyARUIController : MonoBehaviour
 {
     [Header("Panels")]
@@ -14,6 +15,9 @@ public class EasyARUIController : MonoBehaviour
     [Header("AR Map List")]
     public GameObject ARMapListItem;
     public GameObject ARMapListContent;
+
+    [Header("Placed Object Template Database")]
+    public PlacedObjectTemplateDatabase templateDB;
     public void OpenARMapSidePanel()
     {
         ARMapSidePanel.SetActive(true);
@@ -35,10 +39,12 @@ public class EasyARUIController : MonoBehaviour
     public void OpenARObjectListSidePanel()
     {
         ARObjectListSidePanel.SetActive(true);
+        EasyARSpatialMapEditorManager.Instance.EnterEditMode();
     }
     public void CloseARObjectListSidePanel()
     {
         ARObjectListSidePanel.SetActive(false);
+        EasyARSpatialMapEditorManager.Instance.ExitEditMode();
     }
 
     private void UpdateARMapList()
