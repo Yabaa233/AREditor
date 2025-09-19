@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using easyar;
 using SpatialMap_SparseSpatialMap;
+using TouchController = MyEasyAR.TouchController;
 
 namespace Assets.Scripts.Manager
 {
@@ -45,7 +46,7 @@ namespace Assets.Scripts.Manager
         private static ARPlacedObject currentSelectedObject;
 
         // 基于 EasyAR 样例的集中手势控制系统
-        private Common.TouchController touchController;
+        private TouchController touchController;
         private bool isDragging = false;
 
         private GameObject easyarObject;
@@ -96,7 +97,8 @@ namespace Assets.Scripts.Manager
         /// </summary>
         private void HandleObjectSelection()
         {
-            if (!isEditMode || arCamera == null)
+            // 参考官方示例的检查方式
+            if (!isEditMode || arSession == null || arSession.Assembly == null || !arSession.Assembly.Camera)
                 return;
 
             // 处理触摸输入
@@ -120,19 +122,24 @@ namespace Assets.Scripts.Manager
         /// </summary>
         private void ProcessSelectionInput(Vector2 screenPosition)
         {
-            // 统一使用AR相机进行射线检测
-            if (arCamera == null)
+            // 参考官方示例的安全检查
+            if (arSession == null || arSession.Assembly == null || !arSession.Assembly.Camera)
             {
-                Debug.LogWarning("[EasyAR] AR相机未找到，无法进行射线检测");
-                DeselectAllObjects();
+                Debug.LogWarning("[EasyAR] ARSession或Camera未就绪，跳过射线检测");
                 return;
             }
-            Ray ray = arCamera.ScreenPointToRay(screenPosition);
+
+            var camera = arSession.Assembly.Camera;
+            Ray ray = camera.ScreenPointToRay(screenPosition);
+
+            Debug.Log($"[EasyAR] 射线检测 - 相机: {camera.name}, 屏幕位置: {screenPosition}");
 
             RaycastHit hit;
 
             if (Physics.Raycast(ray, out hit))
             {
+                Debug.Log($"[EasyAR] 射线命中: {hit.collider.name}");
+
                 // 检查是否点击到 ARPlacedObject
                 var placedObject = hit.collider.GetComponent<ARPlacedObject>();
                 if (placedObject != null)
@@ -241,11 +248,11 @@ namespace Assets.Scripts.Manager
         private void InitializeTouchController()
         {
             // 查找现有的 TouchController 或创建新的
-            touchController = FindObjectOfType<Common.TouchController>();
+            touchController = FindObjectOfType<TouchController>();
             if (touchController == null)
             {
                 var go = new GameObject("TouchController");
-                touchController = go.AddComponent<Common.TouchController>();
+                touchController = go.AddComponent<TouchController>();
                 Debug.Log("[EasyAR] 创建 TouchController");
             }
             else
@@ -335,8 +342,8 @@ namespace Assets.Scripts.Manager
             arSession = easyarObject.GetComponent<ARSession>();
             mapWorker = easyarObject.GetComponentInChildren<SparseSpatialMapWorkerFrameFilter>();
 
-            // 缓存AR相机引用
-            arCamera = arSession?.Assembly?.Camera;
+            // ✅ 参考官方示例：延迟获取相机，等待Assembly初始化
+            StartCoroutine(InitializeARCamera());
 
             // 立刻锁一次屏幕方向
             ForceLandscapeLock();
@@ -1086,6 +1093,27 @@ namespace Assets.Scripts.Manager
         /// <summary>
         /// 获取AR相机（供UI组件使用）
         /// </summary>
+        /// <summary>
+        /// 初始化AR相机（参考官方示例的方式）
+        /// </summary>
+        private System.Collections.IEnumerator InitializeARCamera()
+        {
+            // 参考官方示例：等待ARSession.Assembly.Camera完全就绪
+            while (arSession == null || arSession.Assembly == null || !arSession.Assembly.Camera)
+            {
+                yield return new WaitForSeconds(0.1f); // 每100ms检查一次
+
+                if (arSession != null)
+                {
+                    Debug.Log($"[EasyAR] 等待Assembly初始化... Assembly: {arSession.Assembly != null}, Camera: {arSession.Assembly?.Camera != null}");
+                }
+            }
+
+            // Assembly和Camera都就绪后才获取
+            arCamera = arSession.Assembly.Camera;
+            Debug.Log($"[EasyAR] AR相机初始化成功: {arCamera.name}");
+        }
+
         public Camera GetARCamera()
         {
             return arCamera;
@@ -1144,11 +1172,13 @@ namespace Assets.Scripts.Manager
 
             Debug.Log($"[EasyAR] 注册放置对象: {obj.name} 在位置: {position}");
 
-            // 如果开启了自动保存，保存地图
-            if (autoSaveOnEdit)
-            {
-                SaveCurrentMap();
-            }
+            // // 如果开启了自动保存，保存地图
+            // if (autoSaveOnEdit)
+            // {
+            //     SaveCurrentMap();
+            //     SaveObjectsInfo();
+            // }
+            RegisterObject(obj);
         }
     }
 }

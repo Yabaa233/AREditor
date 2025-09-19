@@ -50,31 +50,31 @@ public class ARDragItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEnd
             var button = gameObject.AddComponent<Button>();
             button.targetGraphic = image;
             // 添加点击事件作为备用方案
-            button.onClick.AddListener(OnButtonClick);
+            //button.onClick.AddListener(OnButtonClick);
         }
 
         if (enableDebugLogs)
             Debug.Log($"[ARDrag] {gameObject.name} 初始化完成");
     }
 
-    /// <summary>
-    /// 备用方案：按钮点击直接放置对象（适用于移动设备）
-    /// </summary>
-    public void OnButtonClick()
-    {
-        if (enableDebugLogs)
-            Debug.Log("[ARDrag] 按钮点击 - 尝试放置对象");
+    ///// <summary>
+    ///// 备用方案：按钮点击直接放置对象（适用于移动设备）
+    ///// </summary>
+    //public void OnButtonClick()
+    //{
+    //    if (enableDebugLogs)
+    //        Debug.Log("[ARDrag] 按钮点击 - 尝试放置对象");
 
-        if (!CanPlaceObject())
-        {
-            Debug.LogWarning("[ARDrag] 无法放置对象：地图未本地化或不在编辑模式");
-            return;
-        }
+    //    if (!CanPlaceObject())
+    //    {
+    //        Debug.LogWarning("[ARDrag] 无法放置对象：地图未本地化或不在编辑模式");
+    //        return;
+    //    }
 
-        // 在屏幕中心放置对象
-        Vector2 screenCenter = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
-        TryPlaceObjectInARSpace(screenCenter);
-    }
+    //    // 在屏幕中心放置对象
+    //    Vector2 screenCenter = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
+    //    TryPlaceObjectInARSpace(screenCenter);
+    //}
 
     void Update()
     {

@@ -2792,6 +2792,7 @@ GameObject:
   - component: {fileID: 1265281317}
   - component: {fileID: 1265281318}
   - component: {fileID: 1265281319}
+  - component: {fileID: 1265281320}
   m_Layer: 0
   m_Name: ARManager
   m_TagString: Untagged
@@ -2847,6 +2848,18 @@ MonoBehaviour:
   LevelObjects: []
   focusedObject: {fileID: 0}
   levelParent: {fileID: 0}
+--- !u!114 &1265281320
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1265281316}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1801cb0e9bb53c2478db9d22a4a1c30e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1271139371
 GameObject:
   m_ObjectHideFlags: 0
@@ -3187,7 +3200,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1325913785}
-  - component: {fileID: 1325913784}
   - component: {fileID: 1325913786}
   m_Layer: 0
   m_Name: UIController
@@ -3196,38 +3208,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1325913784
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1325913783}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 487d6b27a2486344d93560a25ec2ca90, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  btnCreateMap: {fileID: 0}
-  btnLoadMap: {fileID: 0}
-  btnSaveMap: {fileID: 0}
-  btnSaveMapWithObjects: {fileID: 0}
-  btnClearMap: {fileID: 0}
-  btnTogglePointCloud: {fileID: 0}
-  btnEnterEditMode: {fileID: 0}
-  btnExitEditMode: {fileID: 0}
-  mapSelectionPanel: {fileID: 0}
-  mapListContent: {fileID: 0}
-  mapItemPrefab: {fileID: 6566566946023596512, guid: 1a92e033b4814bf44a26e82b64033a29, type: 3}
-  objectPalettePanel: {fileID: 0}
-  objectPaletteContent: {fileID: 0}
-  objectItemPrefab: {fileID: 5673172545913913838, guid: a175eef6a4a9e734d9de9728abcabdaf, type: 3}
-  btnToggleObjectPalette: {fileID: 0}
-  debugArea: {fileID: 0}
-  statusText: {fileID: 0}
-  mapInfoText: {fileID: 0}
-  editorStatusText: {fileID: 0}
-  showPointCloud: 1
 --- !u!4 &1325913785
 Transform:
   m_ObjectHideFlags: 0

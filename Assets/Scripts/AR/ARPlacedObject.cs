@@ -41,6 +41,8 @@ public class ARPlacedObject : PlacedObject
         lastPosition = transform.position;
         lastRotation = transform.rotation;
         lastScale = transform.localScale;
+
+        // EasyARSpatialMapEditorManager.Instance.RegisterObject(gameObject);
     }
 
     void Awake()
