@@ -43,7 +43,7 @@ namespace Assets.Scripts.Manager
         public MapSession CurrentMapSession => currentMapSession;
 
         // 新增：用于跟踪当前选中的对象，避免多个对象同时响应手势
-        private static ARPlacedObject currentSelectedObject;
+        public ARPlacedObject currentSelectedObject;
 
         // 基于 EasyAR 样例的集中手势控制系统
         private TouchController touchController;

@@ -10,6 +10,8 @@ public class EasyARUIController : MonoBehaviour
     public GameObject ARMapSidePanel;
     public GameObject TwoDMapSidePanel;
     public GameObject ARObjectListSidePanel;
+    public GameObject ObjectSelectionPanel;
+    public GameObject ObjectInspectorPanel;
     public GameObject CreateARMapPanel;
 
     [Header("AR Map List")]
@@ -38,13 +40,49 @@ public class EasyARUIController : MonoBehaviour
     }
     public void OpenARObjectListSidePanel()
     {
+        ARObjectListSidePanel.GetComponent<RectTransform>()
+        .SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, 400f);
         ARObjectListSidePanel.SetActive(true);
+        ObjectSelectionPanel.SetActive(true);
+        ObjectInspectorPanel.SetActive(false);
+
+        ARObjectListSidePanel.SetActive(false);
+        ARObjectListSidePanel.SetActive(true);
+
         EasyARSpatialMapEditorManager.Instance.EnterEditMode();
     }
     public void CloseARObjectListSidePanel()
     {
         ARObjectListSidePanel.SetActive(false);
         EasyARSpatialMapEditorManager.Instance.ExitEditMode();
+    }
+
+    public void OpenARObjectInspector()
+    {
+        ARObjectListSidePanel.GetComponent<RectTransform>()
+        .SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, 800f);
+        ObjectSelectionPanel.SetActive(false);
+        ObjectInspectorPanel.SetActive(true);
+
+        ARObjectListSidePanel.SetActive(false);
+        ARObjectListSidePanel.SetActive(true);
+
+        ObjectInspectorPanel.GetComponent<PlacedObjectInspector>()
+        .SetData(EasyARSpatialMapEditorManager.Instance.focusedObject.GetComponent<ARPlacedObject>().runtimeData);
+
+
+    }
+
+    public void CloseARObjectInspector()
+    {
+        ARObjectListSidePanel.GetComponent<RectTransform>()
+        .SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, 400f);
+        ObjectSelectionPanel.SetActive(true);
+        ObjectInspectorPanel.SetActive(false);
+
+        ARObjectListSidePanel.SetActive(false);
+        ARObjectListSidePanel.SetActive(true);
+
     }
 
     private void UpdateARMapList()
