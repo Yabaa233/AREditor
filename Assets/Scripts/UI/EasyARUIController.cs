@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using Assets.Scripts.Manager;
+using UI.AR;
 using UnityEngine;
 using UnityEngine.UI;
 public class EasyARUIController : MonoBehaviour
@@ -67,9 +68,16 @@ public class EasyARUIController : MonoBehaviour
         ARObjectListSidePanel.SetActive(false);
         ARObjectListSidePanel.SetActive(true);
 
-        ObjectInspectorPanel.GetComponent<PlacedObjectInspector>()
-        .SetData(EasyARSpatialMapEditorManager.Instance.focusedObject.GetComponent<ARPlacedObject>().runtimeData);
+        if (EasyARSpatialMapEditorManager.Instance.currentSelectedObject == null)
+        {
+            Debug.LogWarning("没有选中的AR对象，无法正常赋值");
 
+            ObjectInspectorPanel.GetComponent<ARPlacedObjectInspector>()
+            .SetData(FindFirstObjectByType<ARPlacedObject>());
+            return;
+        }
+        ObjectInspectorPanel.GetComponent<ARPlacedObjectInspector>()
+        .SetData(EasyARSpatialMapEditorManager.Instance.currentSelectedObject.GetComponent<ARPlacedObject>());
 
     }
 
