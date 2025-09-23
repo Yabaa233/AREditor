@@ -163,6 +163,7 @@ namespace SpatialMap_SparseSpatialMap
                 }
                 else
                 {
+                    Debug.LogError("[MapSession] 地图生成失败: " + (string.IsNullOrEmpty(error) ? "未知错误" : error));
                     GUIPopup.EnqueueMessage("Fail to generate Map" + (string.IsNullOrEmpty(error) ? "" : "\n error: " + error), 5);
                 }
                 IsSaving = false;
@@ -173,6 +174,8 @@ namespace SpatialMap_SparseSpatialMap
             }
             catch (Exception e)
             {
+                Debug.LogError("[MapSession] 地图托管失败: " + e.Message);
+                Debug.LogException(e);
                 GUIPopup.EnqueueMessage("Fail to host map: " + e.Message, 5);
                 IsSaving = false;
             }
