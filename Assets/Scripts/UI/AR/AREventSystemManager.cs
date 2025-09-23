@@ -456,7 +456,10 @@ namespace UI.AR
             availableTargets = allARObjects.ToArray();
         }
 
-        private void HandleTargetSelectionInput()
+        /// <summary>
+        /// 处理目标选择输入（供EasyARSpatialMapEditorManager调用）
+        /// </summary>
+        public void HandleTargetSelectionInput()
         {
             if (Input.GetMouseButtonDown(0))
             {
@@ -796,7 +799,7 @@ namespace UI.AR
                             renderer.material.color = color;
                         }
 
-                        Debug.Log($"[AR Event Connection] 已设置箭头材质 {renderer.material.name} 颜色为 {color}");
+                        // Debug.Log($"[AR Event Connection] 已设置箭头材质 {renderer.material.name} 颜色为 {color}");
                     }
                 }
             }

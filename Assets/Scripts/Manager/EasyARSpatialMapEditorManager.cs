@@ -4,9 +4,31 @@ using UnityEngine;
 using easyar;
 using SpatialMap_SparseSpatialMap;
 using TouchController = MyEasyAR.TouchController;
+using UI.AR;
 
 namespace Assets.Scripts.Manager
 {
+    /// <summary>
+    /// 扩展MapMeta.PropInfo来包含事件数据
+    /// </summary>
+    [System.Serializable]
+    public class ExtendedPropInfo : MapMeta.PropInfo
+    {
+        public List<TriggerActionEventData> Events = new List<TriggerActionEventData>();
+        public bool HiddenAtStart = false;
+        public string ObjectID = string.Empty;  // 用于事件系统的唯一标识
+
+        public ExtendedPropInfo() : base() { }
+
+        public ExtendedPropInfo(MapMeta.PropInfo baseProp) : base()
+        {
+            Name = baseProp.Name;
+            Position = baseProp.Position;
+            Rotation = baseProp.Rotation;
+            Scale = baseProp.Scale;
+        }
+    }
+
     /// <summary>
     /// EasyAR空间地图编辑器管理器
     /// 专门处理基于稀疏空间地图的AR编辑功能
@@ -49,6 +71,14 @@ namespace Assets.Scripts.Manager
         private TouchController touchController;
         private bool isDragging = false;
 
+        // 长按检测相关变量
+        private bool isPointerDown = false;
+        private float pointerDownTime = 0f;
+        private Vector2 pointerDownPosition;
+        private const float LONG_PRESS_DURATION = 0.8f; // 长按时间阈值
+        private const float MOVE_THRESHOLD = 50f; // 移动阈值，防止手指移动时误触发长按
+        private bool hasTriggeredLongPress = false;
+
         private GameObject easyarObject;
         private ARSession arSession;  // 私有变量，与官方示例一致
         private Camera arCamera;      // 缓存AR相机引用
@@ -90,6 +120,9 @@ namespace Assets.Scripts.Manager
 
             // 处理对象选择（基于 EasyAR 样例的 Dragger 模式）
             HandleObjectSelection();
+
+            // 处理长按检测
+            HandleLongPressDetection();
         }
 
         /// <summary>
@@ -101,19 +134,166 @@ namespace Assets.Scripts.Manager
             if (!isEditMode || arSession == null || arSession.Assembly == null || !arSession.Assembly.Camera)
                 return;
 
-            // 处理触摸输入
+            // 原有的选择逻辑现在由HandleLongPressDetection处理
+            // 这里保留用于其他需要的选择处理
+        }
+
+        /// <summary>
+        /// 处理长按检测逻辑
+        /// </summary>
+        private void HandleLongPressDetection()
+        {
+            // 检查基本条件
+            if (!isEditMode || arSession == null || arSession.Assembly == null || !arSession.Assembly.Camera)
+                return;
+
+            // 检查是否在设置目标模式
+            var eventSystem = AREventSystemManager.Instance;
+            if (eventSystem != null && eventSystem.IsSelectingTarget())
+            {
+                // 在设置目标模式下，只处理目标选择
+                if (Input.GetMouseButtonDown(0) || (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began))
+                {
+                    Vector2 inputPosition = Input.touchCount > 0 ? Input.GetTouch(0).position : (Vector2)Input.mousePosition;
+
+                    // 检查是否点击了UI
+                    if (UnityEngine.EventSystems.EventSystem.current != null &&
+                        UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
+                    {
+                        return;
+                    }
+
+                    // 处理目标选择
+                    eventSystem.HandleTargetSelectionInput();
+                }
+                return;
+            }
+
+            // 获取输入位置
+            Vector2 currentInputPosition = Vector2.zero;
+            bool hasInput = false;
+
             if (Input.touchCount > 0)
             {
-                var touch = Input.GetTouch(0);
-                if (touch.phase == TouchPhase.Began)
+                currentInputPosition = Input.GetTouch(0).position;
+                hasInput = true;
+            }
+            else if (Application.isEditor)
+            {
+                currentInputPosition = Input.mousePosition;
+                hasInput = true;
+            }
+
+            if (!hasInput) return;
+
+            // 处理输入开始
+            if ((Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began) ||
+                (Application.isEditor && Input.GetMouseButtonDown(0)))
+            {
+                // 检查是否点击了UI
+                if (UnityEngine.EventSystems.EventSystem.current != null &&
+                    UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
                 {
-                    ProcessSelectionInput(touch.position);
+                    return;
+                }
+
+                isPointerDown = true;
+                pointerDownTime = Time.time;
+                pointerDownPosition = currentInputPosition;
+                hasTriggeredLongPress = false;
+            }
+            // 处理输入结束
+            else if ((Input.touchCount > 0 && (Input.GetTouch(0).phase == TouchPhase.Ended || Input.GetTouch(0).phase == TouchPhase.Canceled)) ||
+                     (Application.isEditor && Input.GetMouseButtonUp(0)))
+            {
+                if (isPointerDown && !hasTriggeredLongPress)
+                {
+                    // 短按 - 处理选中物体
+                    ProcessShortPress(pointerDownPosition);
+                }
+
+                isPointerDown = false;
+                hasTriggeredLongPress = false;
+            }
+            // 处理长按检测
+            else if (isPointerDown && !hasTriggeredLongPress)
+            {
+                // 检查是否移动太多（防误触）
+                float moveDistance = Vector2.Distance(currentInputPosition, pointerDownPosition);
+                if (moveDistance > MOVE_THRESHOLD)
+                {
+                    isPointerDown = false;
+                    return;
+                }
+
+                // 检查是否达到长按时间
+                if (Time.time - pointerDownTime >= LONG_PRESS_DURATION)
+                {
+                    hasTriggeredLongPress = true;
+                    ProcessLongPress(pointerDownPosition);
                 }
             }
-            // 编辑器中处理鼠标输入
-            else if (Application.isEditor && Input.GetMouseButtonDown(0))
+        }
+
+        /// <summary>
+        /// 处理短按（选中物体）
+        /// </summary>
+        private void ProcessShortPress(Vector2 screenPosition)
+        {
+            Debug.Log($"[EasyAR] ProcessShortPress 被调用，屏幕位置: {screenPosition}");
+
+            var camera = arSession.Assembly.Camera;
+            Ray ray = camera.ScreenPointToRay(screenPosition);
+            RaycastHit hit;
+
+            Debug.Log($"[EasyAR] 射线检测开始，相机: {camera.name}");
+
+            if (Physics.Raycast(ray, out hit))
             {
-                ProcessSelectionInput(Input.mousePosition);
+                Debug.Log($"[EasyAR] 射线命中: {hit.collider.name}");
+
+                var placedObject = hit.collider.GetComponent<ARPlacedObject>();
+                if (placedObject != null)
+                {
+                    // 短按 - 选中物体（原有逻辑）
+                    SelectObject(placedObject);
+                    Debug.Log($"[EasyAR] 选中物体: {placedObject.name}");
+                    return;
+                }
+                else
+                {
+                    Debug.Log($"[EasyAR] 命中的对象没有ARPlacedObject组件");
+                }
+            }
+            else
+            {
+                Debug.Log("[EasyAR] 射线没有命中任何对象");
+            }
+
+            // 点击空白区域 - 取消选中
+            DeselectAllObjects();
+            Debug.Log("[EasyAR] 取消选中所有对象");
+        }
+
+        /// <summary>
+        /// 处理长按（打开事件Inspector）
+        /// </summary>
+        private void ProcessLongPress(Vector2 screenPosition)
+        {
+            var camera = arSession.Assembly.Camera;
+            Ray ray = camera.ScreenPointToRay(screenPosition);
+            RaycastHit hit;
+
+            if (Physics.Raycast(ray, out hit))
+            {
+                var placedObject = hit.collider.GetComponent<ARPlacedObject>();
+                if (placedObject != null)
+                {
+                    // 长按 - 打开事件Inspector
+                    OpenARObjectInspector(placedObject);
+                    Debug.Log($"[EasyAR] 长按打开Inspector: {placedObject.name}");
+                    return;
+                }
             }
         }
 
@@ -144,6 +324,9 @@ namespace Assets.Scripts.Manager
                 var placedObject = hit.collider.GetComponent<ARPlacedObject>();
                 if (placedObject != null)
                 {
+                    // 打开AR对象Inspector
+                    OpenARObjectInspector(placedObject);
+
                     SelectObject(placedObject);
                     return;
                 }
@@ -151,6 +334,27 @@ namespace Assets.Scripts.Manager
 
             // 没有点击到对象，取消选择
             DeselectAllObjects();
+        }
+
+        /// <summary>
+        /// 打开AR对象Inspector
+        /// </summary>
+        private void OpenARObjectInspector(ARPlacedObject placedObject)
+        {
+            // 设置当前选中的对象
+            currentSelectedObject = placedObject;
+
+            // 查找UI控制器并调用其OpenARObjectInspector方法
+            var uiController = FindObjectOfType<EasyARUIController>();
+            if (uiController != null)
+            {
+                uiController.OpenARObjectInspector();
+                Debug.Log($"[EasyAR] 已通过UI控制器打开AR对象Inspector: {placedObject.name}");
+            }
+            else
+            {
+                Debug.LogWarning("[EasyAR] 未找到EasyARUIController组件");
+            }
         }
 
         /// <summary>
@@ -453,13 +657,33 @@ namespace Assets.Scripts.Manager
                     var rotation = prop.transform.localRotation;
                     var scale = prop.transform.localScale;
 
-                    propInfos.Add(new MapMeta.PropInfo()
+                    // 检查是否是AR对象，如果是则保存扩展信息
+                    var arPlacedObject = prop.GetComponent<ARPlacedObject>();
+                    if (arPlacedObject != null)
                     {
-                        Name = prop.name,
-                        Position = new float[3] { position.x, position.y, position.z },
-                        Rotation = new float[4] { rotation.x, rotation.y, rotation.z, rotation.w },
-                        Scale = new float[3] { scale.x, scale.y, scale.z }
-                    });
+                        var extendedInfo = new ExtendedPropInfo()
+                        {
+                            Name = prop.name,
+                            Position = new float[3] { position.x, position.y, position.z },
+                            Rotation = new float[4] { rotation.x, rotation.y, rotation.z, rotation.w },
+                            Scale = new float[3] { scale.x, scale.y, scale.z },
+                            Events = arPlacedObject.runtimeData.events,
+                            HiddenAtStart = arPlacedObject.runtimeData.ifHiddenAtGameStart,
+                            ObjectID = arPlacedObject.runtimeData.ID
+                        };
+                        propInfos.Add(extendedInfo);
+                    }
+                    else
+                    {
+                        // 普通对象使用基础PropInfo
+                        propInfos.Add(new MapMeta.PropInfo()
+                        {
+                            Name = prop.name,
+                            Position = new float[3] { position.x, position.y, position.z },
+                            Rotation = new float[4] { rotation.x, rotation.y, rotation.z, rotation.w },
+                            Scale = new float[3] { scale.x, scale.y, scale.z }
+                        });
+                    }
                 }
             }
 
@@ -825,15 +1049,36 @@ namespace Assets.Scripts.Manager
                     restoredObject.transform.localScale = scale;
 
                     // 添加必要的组件
-                    if (restoredObject.GetComponent<ARPlacedObject>() == null)
+                    var arPlacedObject = restoredObject.GetComponent<ARPlacedObject>();
+                    if (arPlacedObject == null)
                     {
-                        restoredObject.AddComponent<ARPlacedObject>();
+                        arPlacedObject = restoredObject.AddComponent<ARPlacedObject>();
                     }
 
                     if (restoredObject.GetComponent<Collider>() == null)
                     {
                         restoredObject.AddComponent<BoxCollider>();
                     }
+
+                    // 如果是扩展的PropInfo，恢复事件数据
+                    if (propInfo is ExtendedPropInfo extendedProp)
+                    {
+                        arPlacedObject.runtimeData.events = extendedProp.Events ?? new List<TriggerActionEventData>();
+                        arPlacedObject.runtimeData.ifHiddenAtGameStart = extendedProp.HiddenAtStart;
+                        arPlacedObject.runtimeData.ID = !string.IsNullOrEmpty(extendedProp.ObjectID) ? extendedProp.ObjectID : System.Guid.NewGuid().ToString();
+
+                        Debug.Log($"[EasyAR Spatial Map Editor] 恢复扩展数据: {extendedProp.Events.Count} 个事件");
+                    }
+                    else
+                    {
+                        // 普通对象，设置默认值
+                        arPlacedObject.runtimeData.events = new List<TriggerActionEventData>();
+                        arPlacedObject.runtimeData.ifHiddenAtGameStart = false;
+                        arPlacedObject.runtimeData.ID = System.Guid.NewGuid().ToString();
+                    }
+
+                    // 设置模板ID
+                    arPlacedObject.runtimeData.templateID = template.templateID;
 
                     // 注册到地图数据
                     mapData.Props.Add(restoredObject);
@@ -847,6 +1092,13 @@ namespace Assets.Scripts.Manager
             }
 
             Debug.Log("[EasyAR Spatial Map Editor] 对象恢复完成");
+
+            // 恢复完成后，刷新AR事件系统的连接线
+            if (AREventSystemManager.Instance != null)
+            {
+                AREventSystemManager.Instance.RefreshAllConnections();
+                Debug.Log("[EasyAR Spatial Map Editor] 已刷新AR事件系统连接线");
+            }
         }
 
         /// <summary>

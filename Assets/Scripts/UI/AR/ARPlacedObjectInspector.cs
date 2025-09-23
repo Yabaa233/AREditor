@@ -28,6 +28,8 @@ namespace UI.AR
                 var evt = new TriggerActionEventData();
                 currentData.events.Add(evt);
                 AddEventItemUI(evt);
+                // 自动保存
+                TriggerAutoSave();
             });
 
             deleteButton.onClick.AddListener(() =>
@@ -99,6 +101,8 @@ namespace UI.AR
                 {
                     currentARObject.gameObject.SetActive(!val);
                 }
+                // 自动保存
+                TriggerAutoSave();
             });
         }
 
@@ -113,7 +117,22 @@ namespace UI.AR
                 Destroy(item);
                 // AR版本额外功能：刷新连接线
                 RefreshARConnections();
-            }, currentARObject);  // 传递源对象引用
+                // 自动保存
+                TriggerAutoSave();
+            }, currentARObject, () => TriggerAutoSave());  // 传递自动保存回调
+        }
+
+        /// <summary>
+        /// 触发自动保存
+        /// </summary>
+        private void TriggerAutoSave()
+        {
+            // 调用EasyAR管理器的保存方法
+            if (Assets.Scripts.Manager.EasyARSpatialMapEditorManager.Instance != null)
+            {
+                Assets.Scripts.Manager.EasyARSpatialMapEditorManager.Instance.SaveObjectsInfo();
+                Debug.Log("[AR Inspector] 事件数据已自动保存");
+            }
         }
 
         private void CloseInspector()

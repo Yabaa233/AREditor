@@ -75,6 +75,12 @@ public class EasyARUIController : MonoBehaviour
         {
             Debug.LogWarning("没有选中的AR对象，无法正常赋值");
 
+            if (tempObject == null)
+            {
+                Debug.LogWarning("临时AR对象未设置，无法赋值");
+                return;
+            }
+
             ObjectInspectorPanel.GetComponent<ARPlacedObjectInspector>()
             .SetData(tempObject);
             return;

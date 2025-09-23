@@ -23,14 +23,16 @@ namespace UI.AR
         private TriggerActionEventData data;
         private System.Action onDeleteCallback;
         private ARPlacedObject sourceObject;  // 添加源对象引用
+        private System.Action onAutoSave;     // 自动保存回调
 
         /// <summary>
         /// 初始化事件UI - 完全复制原版TriggerActionEventUI的逻辑
         /// </summary>
-        public void Init(TriggerActionEventData data, System.Action onDelete, ARPlacedObject sourceObj = null)
+        public void Init(TriggerActionEventData data, System.Action onDelete, ARPlacedObject sourceObj = null, System.Action autoSaveCallback = null)
         {
             this.data = data;
             this.sourceObject = sourceObj;  // 存储源对象引用
+            this.onAutoSave = autoSaveCallback; // 存储自动保存回调
 
             // 完全复制原版的下拉菜单设置
             triggerDropdown.ClearOptions();
@@ -45,6 +47,9 @@ namespace UI.AR
                 {
                     AREventSystemManager.Instance.RefreshAllConnections();
                 }
+
+                // 自动保存
+                onAutoSave?.Invoke();
             });
 
             resultDropdown.ClearOptions();
@@ -60,6 +65,9 @@ namespace UI.AR
                 {
                     AREventSystemManager.Instance.RefreshAllConnections();
                 }
+
+                // 自动保存
+                onAutoSave?.Invoke();
             });
 
             RefreshTargetVisibility();
@@ -138,6 +146,9 @@ namespace UI.AR
                     {
                         Debug.LogError("[AR Event UI] AREventSystemManager.Instance 为 null，无法刷新连接线");
                     }
+
+                    // 自动保存
+                    onAutoSave?.Invoke();
                 }
                 else
                 {
