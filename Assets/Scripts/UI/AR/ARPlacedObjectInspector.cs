@@ -113,7 +113,7 @@ namespace UI.AR
                 Destroy(item);
                 // AR版本额外功能：刷新连接线
                 RefreshARConnections();
-            });
+            }, currentARObject);  // 传递源对象引用
         }
 
         private void CloseInspector()

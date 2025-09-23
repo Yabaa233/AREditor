@@ -22,19 +22,30 @@ namespace UI.AR
 
         private TriggerActionEventData data;
         private System.Action onDeleteCallback;
+        private ARPlacedObject sourceObject;  // 添加源对象引用
 
         /// <summary>
         /// 初始化事件UI - 完全复制原版TriggerActionEventUI的逻辑
         /// </summary>
-        public void Init(TriggerActionEventData data, System.Action onDelete)
+        public void Init(TriggerActionEventData data, System.Action onDelete, ARPlacedObject sourceObj = null)
         {
             this.data = data;
+            this.sourceObject = sourceObj;  // 存储源对象引用
 
             // 完全复制原版的下拉菜单设置
             triggerDropdown.ClearOptions();
             triggerDropdown.AddOptions(System.Enum.GetNames(typeof(TriggerType)).ToList());
             triggerDropdown.value = (int)data.triggerType;
-            triggerDropdown.onValueChanged.AddListener(i => data.triggerType = (TriggerType)i);
+            triggerDropdown.onValueChanged.AddListener(i =>
+            {
+                data.triggerType = (TriggerType)i;
+
+                // AR特有：TriggerType变化时也刷新连接线
+                if (AREventSystemManager.Instance != null)
+                {
+                    AREventSystemManager.Instance.RefreshAllConnections();
+                }
+            });
 
             resultDropdown.ClearOptions();
             resultDropdown.AddOptions(System.Enum.GetNames(typeof(ActionType)).ToList());
@@ -43,6 +54,12 @@ namespace UI.AR
             {
                 data.actionType = (ActionType)i;
                 RefreshTargetVisibility(); // 与原版相同：更新目标UI可见性
+
+                // AR特有：ActionType变化时刷新连接线（因为Win/Lose不显示连接线）
+                if (AREventSystemManager.Instance != null)
+                {
+                    AREventSystemManager.Instance.RefreshAllConnections();
+                }
             });
 
             RefreshTargetVisibility();
@@ -97,13 +114,34 @@ namespace UI.AR
 
         private void OnARTargetSelected(ARPlacedObject target)
         {
+            Debug.Log($"[AR Event UI] OnARTargetSelected 被调用，目标: {(target != null ? target.name : "null")}");
+
             if (target != null)
             {
                 var placedObject = target.GetComponent<PlacedObject>();
                 if (placedObject != null && placedObject.runtimeData != null)
                 {
+                    string oldTargetID = data.targetObjectID;
                     data.targetObjectID = placedObject.runtimeData.ID;
+
+                    Debug.Log($"[AR Event UI] 目标ID已更新: {oldTargetID} -> {data.targetObjectID}");
+
                     RefreshTargetLabel();
+
+                    // 重要：设置target后刷新连接线显示
+                    if (AREventSystemManager.Instance != null)
+                    {
+                        Debug.Log("[AR Event UI] 正在刷新连接线...");
+                        AREventSystemManager.Instance.RefreshAllConnections();
+                    }
+                    else
+                    {
+                        Debug.LogError("[AR Event UI] AREventSystemManager.Instance 为 null，无法刷新连接线");
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning($"[AR Event UI] 目标对象 {target.name} 缺少 PlacedObject 组件或 runtimeData");
                 }
             }
         }

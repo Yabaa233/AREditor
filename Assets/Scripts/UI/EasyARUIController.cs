@@ -21,6 +21,9 @@ public class EasyARUIController : MonoBehaviour
 
     [Header("Placed Object Template Database")]
     public PlacedObjectTemplateDatabase templateDB;
+
+
+    public ARPlacedObject tempObject;
     public void OpenARMapSidePanel()
     {
         ARMapSidePanel.SetActive(true);
@@ -73,7 +76,7 @@ public class EasyARUIController : MonoBehaviour
             Debug.LogWarning("没有选中的AR对象，无法正常赋值");
 
             ObjectInspectorPanel.GetComponent<ARPlacedObjectInspector>()
-            .SetData(FindFirstObjectByType<ARPlacedObject>());
+            .SetData(tempObject);
             return;
         }
         ObjectInspectorPanel.GetComponent<ARPlacedObjectInspector>()
