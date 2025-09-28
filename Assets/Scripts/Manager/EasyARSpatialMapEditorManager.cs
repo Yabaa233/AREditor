@@ -726,6 +726,12 @@ namespace Assets.Scripts.Manager
 
             isEditMode = true;
             Debug.Log("[EasyAR Spatial Map Editor] 进入编辑模式");
+
+            // 通知AR事件系统更新连接线显示
+            if (AREventSystemManager.Instance != null)
+            {
+                AREventSystemManager.Instance.OnModeChanged();
+            }
         }
 
         /// <summary>
@@ -738,6 +744,12 @@ namespace Assets.Scripts.Manager
 
             // 退出时取消所有对象的选中状态
             DeselectAllObjects();
+
+            // 通知AR事件系统更新连接线显示
+            if (AREventSystemManager.Instance != null)
+            {
+                AREventSystemManager.Instance.OnModeChanged();
+            }
 
             // 退出编辑模式时自动保存对象信息
             SaveObjectsInfo();
@@ -968,6 +980,12 @@ namespace Assets.Scripts.Manager
 
                     // 地图本地化后，恢复保存的对象
                     RestoreObjectsFromMapMeta();
+
+                    // 通知AR事件系统更新连接线显示
+                    if (AREventSystemManager.Instance != null)
+                    {
+                        AREventSystemManager.Instance.OnModeChanged();
+                    }
                 }
                 yield return new WaitForSeconds(0.5f);
             }

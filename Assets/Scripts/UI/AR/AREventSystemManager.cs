@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System;
 using System.Reflection;
+using Assets.Scripts.Manager;
 
 namespace UI.AR
 {
@@ -77,6 +78,26 @@ namespace UI.AR
             if (isSelecting)
             {
                 HandleTargetSelectionInput();
+            }
+
+            // 检查连接线显示状态
+            CheckConnectionVisibility();
+        }
+
+        /// <summary>
+        /// 检查并更新连接线可见性
+        /// </summary>
+        private void CheckConnectionVisibility()
+        {
+            bool shouldShow = ShouldShowConnections();
+
+            // 直接控制连接线GameObject的激活状态
+            foreach (var connection in eventConnections.Values)
+            {
+                if (connection != null && connection.gameObject != null)
+                {
+                    connection.gameObject.SetActive(shouldShow);
+                }
             }
         }
 
@@ -255,11 +276,40 @@ namespace UI.AR
         #region 连接线管理
 
         /// <summary>
+        /// 检查是否应该显示连接线
+        /// </summary>
+        private bool ShouldShowConnections()
+        {
+            var easyARManager = EasyARSpatialMapEditorManager.Instance;
+            if (easyARManager == null)
+                return false;
+
+            // 只有在编辑模式且地图已加载时才显示连接线
+            return easyARManager.IsEditMode && easyARManager.IsMapLocalized;
+        }
+
+        /// <summary>
+        /// 处理模式切换时的连接线显示
+        /// </summary>
+        public void OnModeChanged()
+        {
+            // 立即更新连接线可见性
+            CheckConnectionVisibility();
+        }
+
+        /// <summary>
         /// 刷新所有连接线
         /// </summary>
         public void RefreshAllConnections()
         {
             ClearAllConnections();
+
+            // 只有在编辑模式且地图已加载时才显示连接线
+            if (!ShouldShowConnections())
+            {
+                return;
+            }
+
             RefreshAllObjects();
 
             foreach (var sourceObj in allARObjects)
@@ -284,6 +334,12 @@ namespace UI.AR
         /// </summary>
         public void CreateConnection(ARPlacedObject source, TriggerActionEventData eventData)
         {
+            // 只有在编辑模式且地图已加载时才创建连接线
+            if (!ShouldShowConnections())
+            {
+                return;
+            }
+
             // Win和Lose事件不需要目标对象，跳过连接线创建
             if (eventData.actionType == ActionType.Win || eventData.actionType == ActionType.Lose)
             {
