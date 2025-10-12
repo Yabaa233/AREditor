@@ -664,7 +664,20 @@ namespace Assets.Scripts.Manager
                             IfHiddenAtGameStart = arPlacedObject.runtimeData.ifHiddenAtGameStart,
                             ObjectID = arPlacedObject.runtimeData.ID
                         });
-
+                    }
+                    else
+                    {
+                        // 普通对象使用基础PropInfo
+                        propInfos.Add(new MapMeta.PropInfo()
+                        {
+                            Name = prop.name,
+                            Position = new float[3] { position.x, position.y, position.z },
+                            Rotation = new float[4] { rotation.x, rotation.y, rotation.z, rotation.w },
+                            Scale = new float[3] { scale.x, scale.y, scale.z },
+                            Events = new List<MapMeta.TriggerActionEventData>(),
+                            IfHiddenAtGameStart = false,
+                            ObjectID = string.Empty
+                        });
                     }
                 }
             }
@@ -711,6 +724,25 @@ namespace Assets.Scripts.Manager
             if (AREventSystemManager.Instance != null)
             {
                 AREventSystemManager.Instance.OnModeChanged();
+
+                // 延迟刷新连接线，确保编辑模式状态已完全更新
+                StartCoroutine(DelayedRefreshConnections());
+            }
+        }
+
+        /// <summary>
+        /// 延迟刷新连接线
+        /// </summary>
+        private System.Collections.IEnumerator DelayedRefreshConnections()
+        {
+            // 等待几帧，确保编辑模式状态完全更新
+            yield return null;
+            yield return null;
+
+            if (AREventSystemManager.Instance != null && isEditMode)
+            {
+                AREventSystemManager.Instance.RefreshAllConnections();
+                Debug.Log("[EasyAR Spatial Map Editor] 进入编辑模式后刷新连接线");
             }
         }
 
@@ -961,10 +993,11 @@ namespace Assets.Scripts.Manager
                     // 地图本地化后，恢复保存的对象
                     RestoreObjectsFromMapMeta();
 
-                    // 通知AR事件系统更新连接线显示
+                    // 不在这里刷新连线，等待进入编辑模式时再刷新
                     if (AREventSystemManager.Instance != null)
                     {
                         AREventSystemManager.Instance.OnModeChanged();
+                        Debug.Log("[EasyAR Spatial Map Editor] 通知AR事件系统地图已本地化");
                     }
                 }
                 yield return new WaitForSeconds(0.5f);
@@ -1097,11 +1130,12 @@ namespace Assets.Scripts.Manager
 
             Debug.Log("[EasyAR Spatial Map Editor] 对象恢复完成");
 
-            // 恢复完成后，刷新AR事件系统的连接线
+            // 对象恢复完成后，通知AR事件系统但不立即刷新连线
+            // 连线刷新将在进入编辑模式时进行
             if (AREventSystemManager.Instance != null)
             {
-                AREventSystemManager.Instance.RefreshAllConnections();
-                Debug.Log("[EasyAR Spatial Map Editor] 已刷新AR事件系统连接线");
+                AREventSystemManager.Instance.OnModeChanged();
+                Debug.Log("[EasyAR Spatial Map Editor] 通知AR事件系统对象已恢复");
             }
         }
 

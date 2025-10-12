@@ -69,8 +69,8 @@ namespace UI.AR
         void Start()
         {
             RefreshAllObjects();
-            // 延迟刷新连接线以确保所有对象都已加载
-            Invoke("RefreshAllConnections", 0.5f);
+            // 移除自动刷新，改为响应式刷新
+            // Invoke("RefreshAllConnections", 0.5f);
         }
 
         void Update()
@@ -295,6 +295,28 @@ namespace UI.AR
         {
             // 立即更新连接线可见性
             CheckConnectionVisibility();
+
+            // 如果进入编辑模式，延迟刷新连接线以确保所有状态都已更新
+            if (ShouldShowConnections())
+            {
+                StartCoroutine(DelayedRefreshConnections());
+            }
+        }
+
+        /// <summary>
+        /// 延迟刷新连接线
+        /// </summary>
+        private System.Collections.IEnumerator DelayedRefreshConnections()
+        {
+            // 等待几帧，确保编辑模式状态完全更新
+            yield return null;
+            yield return null;
+
+            if (ShouldShowConnections())
+            {
+                RefreshAllConnections();
+                Debug.Log("[AR Event System] 延迟刷新连接线完成");
+            }
         }
 
         /// <summary>
@@ -302,31 +324,35 @@ namespace UI.AR
         /// </summary>
         public void RefreshAllConnections()
         {
+            Debug.Log($"[AR Event System] RefreshAllConnections 开始，当前编辑模式: {ShouldShowConnections()}");
+
             ClearAllConnections();
 
             // 只有在编辑模式且地图已加载时才显示连接线
             if (!ShouldShowConnections())
             {
+                Debug.Log("[AR Event System] 不在编辑模式或地图未加载，跳过连接线创建");
                 return;
             }
 
             RefreshAllObjects();
 
+            int connectionCount = 0;
             foreach (var sourceObj in allARObjects)
             {
                 if (sourceObj?.runtimeData?.events != null)
                 {
+                    Debug.Log($"[AR Event System] 处理对象 {sourceObj.name} 的 {sourceObj.runtimeData.events.Count} 个事件");
+
                     foreach (var eventData in sourceObj.runtimeData.events)
                     {
                         CreateConnection(sourceObj, eventData);
+                        connectionCount++;
                     }
                 }
             }
 
-            if (debugEventTriggers)
-            {
-                Debug.Log($"[AR Event System] 已刷新 {eventConnections.Count} 条连接线");
-            }
+            Debug.Log($"[AR Event System] 已刷新 {connectionCount} 条连接线，实际创建 {eventConnections.Count} 条");
         }
 
         /// <summary>
@@ -337,6 +363,7 @@ namespace UI.AR
             // 只有在编辑模式且地图已加载时才创建连接线
             if (!ShouldShowConnections())
             {
+                Debug.Log("[AR Event System] 不在编辑模式，跳过连接线创建");
                 return;
             }
 
@@ -351,11 +378,17 @@ namespace UI.AR
             }
 
             if (source == null || eventData == null || string.IsNullOrEmpty(eventData.targetObjectID))
+            {
+                Debug.LogWarning("[AR Event System] CreateConnection 参数无效");
                 return;
+            }
 
             ARPlacedObject target = FindObjectById(eventData.targetObjectID);
             if (target == null)
+            {
+                Debug.LogWarning($"[AR Event System] 找不到目标对象: {eventData.targetObjectID}");
                 return;
+            }
 
             string connectionId = $"{source.runtimeData.ID}_{eventData.targetObjectID}_{eventData.GetHashCode()}";
 
@@ -367,22 +400,16 @@ namespace UI.AR
             AREventConnection connection = CreateConnectionObject(source, target, eventData.actionType);
             eventConnections[connectionId] = connection;
 
-            // 详细的连接诊断信息
-            Vector3 sourcePos = source.transform.position;
-            Vector3 targetPos = target.transform.position;
-            Vector3 direction = targetPos - sourcePos;
-            float distance = direction.magnitude;
+            Debug.Log($"[AR Event System] 成功创建连接线: {source.name} -> {target.name} ({eventData.actionType})");
 
-            Debug.Log($"[AR Event System] ===== 连接线创建诊断 =====");
-            Debug.Log($"[AR Event System] 源对象: {source.name} ({source.runtimeData.ID})");
-            Debug.Log($"[AR Event System] 目标对象: {target.name} ({target.runtimeData.ID})");
-            Debug.Log($"[AR Event System] 源位置: {sourcePos}");
-            Debug.Log($"[AR Event System] 目标位置: {targetPos}");
-            Debug.Log($"[AR Event System] 3D距离: {distance}");
-            Debug.Log($"[AR Event System] 方向向量: {direction}");
-            Debug.Log($"[AR Event System] 连接回缩比例: {connectionOffset}");
-            Debug.Log($"[AR Event System] 事件类型: {eventData.actionType}");
-            Debug.Log($"[AR Event System] ==============================");
+        }
+
+        /// <summary>
+        /// 外部调用的强制刷新接口，用于确保连接线在适当时机显示
+        /// </summary>
+        public void ForceRefreshConnections()
+        {
+            StartCoroutine(DelayedRefreshConnections());
         }
 
         private AREventConnection CreateConnectionObject(ARPlacedObject source, ARPlacedObject target, ActionType actionType)
