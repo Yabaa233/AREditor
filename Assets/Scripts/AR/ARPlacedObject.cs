@@ -23,7 +23,8 @@ public class ARPlacedObject : PlacedObject
     // transform change detection for auto-save
     private Vector3 lastPosition;
     private Quaternion lastRotation;
-    private Vector3 lastScale; protected override void Start()
+    private Vector3 lastScale;
+    protected override void Start()
     {
         // 不调用 base.Start()，因为基类有 PlaneViewer 的引用
         if (!initialized)
@@ -106,6 +107,25 @@ public class ARPlacedObject : PlacedObject
             scale = transform.localScale,
             events = new(template.defaultEvents)
         };
+
+        initialized = true;
+    }
+    public void InitializeFromEasyAR(PlacedObjectData data)
+    {
+        if (templateDatabase == null)
+        {
+            Debug.LogError("Template Database is not assigned.");
+            return;
+        }
+
+        var template = templateDatabase.GetTemplateByID(selectedTemplateID);
+        if (template == null)
+        {
+            Debug.LogError($"Template ID '{selectedTemplateID}' not found in database ");
+            return;
+        }
+
+        runtimeData = data;
 
         initialized = true;
     }

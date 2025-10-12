@@ -18,7 +18,7 @@ public class PlacedObject : MonoBehaviour
     [SerializeField, ReadOnly]
     public PlacedObjectData runtimeData;
 
-    protected bool initialized = false;
+    public bool initialized = false;
 
     private PlacedObjectPlaneViewer viewer;
 

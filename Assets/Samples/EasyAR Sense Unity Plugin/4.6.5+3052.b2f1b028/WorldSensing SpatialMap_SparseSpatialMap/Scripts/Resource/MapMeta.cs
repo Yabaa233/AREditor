@@ -31,6 +31,27 @@ namespace SpatialMap_SparseSpatialMap
             public float[] Position = new float[3];
             public float[] Rotation = new float[4];
             public float[] Scale = new float[3];
+
+            public string ObjectID = string.Empty; // ID of the PlacedObjectData
+            public List<TriggerActionEventData> Events = new List<TriggerActionEventData>();    // Events attached to this object
+
+            public bool IfHiddenAtGameStart = false; // Whether the object is hidden at game start
         }
+
+        [System.Serializable]
+        /// <summary>
+        /// Event data
+        /// </summary>
+        public class TriggerActionEventData
+        {
+            public TriggerType triggerType;
+
+            public ActionType actionType;
+
+            public string targetObjectID;
+        }
+
+        public enum TriggerType { OnEnter, OnExit }
+        public enum ActionType { Win, Lose, Enable, Disable }
     }
 }

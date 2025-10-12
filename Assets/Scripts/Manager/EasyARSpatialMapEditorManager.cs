@@ -9,27 +9,6 @@ using UI.AR;
 namespace Assets.Scripts.Manager
 {
     /// <summary>
-    /// 扩展MapMeta.PropInfo来包含事件数据
-    /// </summary>
-    [System.Serializable]
-    public class ExtendedPropInfo : MapMeta.PropInfo
-    {
-        public List<TriggerActionEventData> Events = new List<TriggerActionEventData>();
-        public bool HiddenAtStart = false;
-        public string ObjectID = string.Empty;  // 用于事件系统的唯一标识
-
-        public ExtendedPropInfo() : base() { }
-
-        public ExtendedPropInfo(MapMeta.PropInfo baseProp) : base()
-        {
-            Name = baseProp.Name;
-            Position = baseProp.Position;
-            Rotation = baseProp.Rotation;
-            Scale = baseProp.Scale;
-        }
-    }
-
-    /// <summary>
     /// EasyAR空间地图编辑器管理器
     /// 专门处理基于稀疏空间地图的AR编辑功能
     /// </summary>
@@ -661,36 +640,37 @@ namespace Assets.Scripts.Manager
                     var arPlacedObject = prop.GetComponent<ARPlacedObject>();
                     if (arPlacedObject != null)
                     {
-                        var extendedInfo = new ExtendedPropInfo()
+                        // 转换事件类型：从 TriggerActionEventData 转换为 MapMeta.TriggerActionEventData
+                        var convertedEvents = new List<MapMeta.TriggerActionEventData>();
+                        if (arPlacedObject.runtimeData.events != null)
                         {
-                            Name = prop.name,
-                            Position = new float[3] { position.x, position.y, position.z },
-                            Rotation = new float[4] { rotation.x, rotation.y, rotation.z, rotation.w },
-                            Scale = new float[3] { scale.x, scale.y, scale.z },
-                            Events = arPlacedObject.runtimeData.events,
-                            HiddenAtStart = arPlacedObject.runtimeData.ifHiddenAtGameStart,
-                            ObjectID = arPlacedObject.runtimeData.ID
-                        };
-                        propInfos.Add(extendedInfo);
-                    }
-                    else
-                    {
-                        // 普通对象使用基础PropInfo
+                            foreach (var eventData in arPlacedObject.runtimeData.events)
+                            {
+                                convertedEvents.Add(new MapMeta.TriggerActionEventData()
+                                {
+                                    triggerType = (MapMeta.TriggerType)eventData.triggerType,
+                                    actionType = (MapMeta.ActionType)eventData.actionType,
+                                    targetObjectID = eventData.targetObjectID
+                                });
+                            }
+                        }
                         propInfos.Add(new MapMeta.PropInfo()
                         {
                             Name = prop.name,
                             Position = new float[3] { position.x, position.y, position.z },
                             Rotation = new float[4] { rotation.x, rotation.y, rotation.z, rotation.w },
-                            Scale = new float[3] { scale.x, scale.y, scale.z }
+                            Scale = new float[3] { scale.x, scale.y, scale.z },
+                            Events = convertedEvents,
+                            IfHiddenAtGameStart = arPlacedObject.runtimeData.ifHiddenAtGameStart,
+                            ObjectID = arPlacedObject.runtimeData.ID
                         });
+
                     }
                 }
             }
 
             mapData.Meta.Props = propInfos;
             MapMetaManager.Save(mapData.Meta);
-
-            Debug.Log($"[EasyAR Spatial Map Editor] 保存对象信息: {propInfos.Count} 个对象");
         }
 
         /// <summary>
@@ -1078,22 +1058,28 @@ namespace Assets.Scripts.Manager
                         restoredObject.AddComponent<BoxCollider>();
                     }
 
-                    // 如果是扩展的PropInfo，恢复事件数据
-                    if (propInfo is ExtendedPropInfo extendedProp)
+                    // 转换事件类型：从 MapMeta.TriggerActionEventData 转换为 TriggerActionEventData
+                    var convertedEvents = new List<TriggerActionEventData>();
+                    if (propInfo.Events != null)
                     {
-                        arPlacedObject.runtimeData.events = extendedProp.Events ?? new List<TriggerActionEventData>();
-                        arPlacedObject.runtimeData.ifHiddenAtGameStart = extendedProp.HiddenAtStart;
-                        arPlacedObject.runtimeData.ID = !string.IsNullOrEmpty(extendedProp.ObjectID) ? extendedProp.ObjectID : System.Guid.NewGuid().ToString();
+                        foreach (var eventData in propInfo.Events)
+                        {
+                            convertedEvents.Add(new TriggerActionEventData()
+                            {
+                                triggerType = (TriggerType)eventData.triggerType,
+                                actionType = (ActionType)eventData.actionType,
+                                targetObjectID = eventData.targetObjectID
+                            });
+                            Debug.Log($"[EasyAR Spatial Map Editor] 恢复事件: TriggerType={eventData.triggerType}, ActionType={eventData.actionType}, TargetID={eventData.targetObjectID}");
+                        }
+                    }
 
-                        Debug.Log($"[EasyAR Spatial Map Editor] 恢复扩展数据: {extendedProp.Events.Count} 个事件");
-                    }
-                    else
-                    {
-                        // 普通对象，设置默认值
-                        arPlacedObject.runtimeData.events = new List<TriggerActionEventData>();
-                        arPlacedObject.runtimeData.ifHiddenAtGameStart = false;
-                        arPlacedObject.runtimeData.ID = System.Guid.NewGuid().ToString();
-                    }
+                    // 设置事件数据
+                    arPlacedObject.runtimeData.events = convertedEvents;
+                    arPlacedObject.runtimeData.ifHiddenAtGameStart = propInfo.IfHiddenAtGameStart;
+                    arPlacedObject.runtimeData.ID = (propInfo.ObjectID == string.Empty) ? EditorManager.Instance.GenerateUniqueID() : propInfo.ObjectID;
+                    arPlacedObject.initialized = true;
+
 
                     // 设置模板ID
                     arPlacedObject.runtimeData.templateID = template.templateID;
@@ -1101,7 +1087,7 @@ namespace Assets.Scripts.Manager
                     // 注册到地图数据
                     mapData.Props.Add(restoredObject);
 
-                    Debug.Log($"[EasyAR Spatial Map Editor] 恢复对象: {propInfo.Name} at {position}");
+                    Debug.Log($"[EasyAR Spatial Map Editor] 恢复对象: {propInfo.ObjectID} at {position}");
                 }
                 catch (System.Exception ex)
                 {

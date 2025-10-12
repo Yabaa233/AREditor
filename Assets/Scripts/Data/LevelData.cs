@@ -26,16 +26,25 @@ public class ObjectTemplateData
 /// </summary>
 public class PlacedObjectData
 {
-
+    [SerializeField]
     public string templateID;
 
+    [SerializeField]
     public string ID;
 
+    [SerializeField]
     public bool ifHiddenAtGameStart;
 
+    [SerializeField]
     public Vector3 position;
+
+    [SerializeField]
     public Vector3 rotation;
+
+    [SerializeField]
     public Vector3 scale;
+
+    [SerializeField]
     public List<TriggerActionEventData> events = new();  // the list of events bound to this object
 
 }
@@ -46,8 +55,13 @@ public class PlacedObjectData
 /// </summary>
 public class TriggerActionEventData
 {
+    [SerializeField]
     public TriggerType triggerType;
+
+    [SerializeField]
     public ActionType actionType;
+
+    [SerializeField]
     public string targetObjectID;
 }
 
