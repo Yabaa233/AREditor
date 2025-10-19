@@ -101,11 +101,6 @@ namespace UI.AR
             hiddenAtStartToggle.onValueChanged.AddListener(val =>
             {
                 currentData.ifHiddenAtGameStart = val;
-                // AR版本额外功能：实时应用可见性变化
-                if (currentARObject != null)
-                {
-                    currentARObject.gameObject.SetActive(!val);
-                }
                 // 自动保存
                 TriggerAutoSave();
             });

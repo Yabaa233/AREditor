@@ -144,6 +144,11 @@ public class EasyARUIController : MonoBehaviour
 
     public void OpenGamePLay()
     {
+        if (!EasyARSpatialMapEditorManager.Instance.isMapLocalized)
+        {
+            Debug.LogWarning("[EasyAR Spatial Map Editor] 地图未本地化，无法进入播放模式");
+            return;
+        }
         CloseARObjectListSidePanel();
         CloseParentSidePanel();
         EasyARSpatialMapEditorManager.Instance.EnterPlayMode();

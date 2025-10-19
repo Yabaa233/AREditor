@@ -22,14 +22,22 @@ namespace Assets.Scripts.Manager
         public bool showPointCloud = true;
         public bool autoSaveOnEdit = false;
 
+        [Header("Debug Settings")]
+        public bool showColliderDebug = false; // 显示碰撞体调试信息
+
         // 当前地图会话 - 现在可以直接使用 EasyAR 示例中的类型
         private MapSession currentMapSession;
         private List<MapMeta> availableMaps = new List<MapMeta>();
 
         // 编辑器状态
-        private bool isMapLocalized = false;
+        public bool isMapLocalized = false;
         private bool isMapBuilding = false;
         private bool isEditMode = false;
+        private bool isPlayMode = false;
+
+        // 播放模式相关变量
+        private GameObject playerCollider; // AR相机上的玩家碰撞体
+        private List<EventActionHandler> activeEventHandlers = new List<EventActionHandler>();
 
         // 事件
         public event Action OnMapLocalized;
@@ -41,6 +49,7 @@ namespace Assets.Scripts.Manager
         public bool IsMapLocalized => isMapLocalized;
         public bool IsMapBuilding => isMapBuilding;
         public bool IsEditMode => isEditMode;
+        public bool IsPlayMode => isPlayMode;
         public MapSession CurrentMapSession => currentMapSession;
 
         // 新增：用于跟踪当前选中的对象，避免多个对象同时响应手势
@@ -102,6 +111,12 @@ namespace Assets.Scripts.Manager
 
             // 处理长按检测
             HandleLongPressDetection();
+
+            // 在播放模式下更新碰撞体调试可视化
+            if (isPlayMode && showColliderDebug)
+            {
+                UpdateColliderDebugVisualization();
+            }
         }
 
         /// <summary>
@@ -767,6 +782,9 @@ namespace Assets.Scripts.Manager
             SaveObjectsInfo();
         }
 
+        /// <summary>
+        /// 进入播放模式
+        /// </summary>
         public void EnterPlayMode()
         {
             if (!isMapLocalized)
@@ -774,12 +792,495 @@ namespace Assets.Scripts.Manager
                 Debug.LogWarning("[EasyAR Spatial Map Editor] 地图未本地化，无法进入播放模式");
                 return;
             }
-            ExitEditMode();
+
+            // 先退出编辑模式
+            if (isEditMode)
+            {
+                ExitEditMode();
+            }
+
+            isPlayMode = true;
             Debug.Log("[EasyAR Spatial Map Editor] 进入播放模式");
+
+            // 1. 为所有AR对象生成事件逻辑
+            GenerateEventLogic();
+
+            // 2. 在AR相机位置创建玩家碰撞体
+            CreatePlayerCollider();
+
+            // 3. 隐藏连接线
+            if (AREventSystemManager.Instance != null)
+            {
+                AREventSystemManager.Instance.OnModeChanged();
+            }
+
+            // 4. 处理游戏开始时隐藏的对象
+            ProcessGameStartVisibility();
+
+            // 5. 设置碰撞体调试可视化
+            SetupColliderDebugVisualization();
+
+            Debug.Log("[EasyAR Spatial Map Editor] 播放模式已激活");
         }
-        public void ExitPLayMode()
+
+        /// <summary>
+        /// 退出播放模式
+        /// </summary>
+        public void ExitPlayMode()
         {
+            if (!isPlayMode)
+            {
+                Debug.LogWarning("[EasyAR Spatial Map Editor] 当前不在播放模式");
+                return;
+            }
+
+            isPlayMode = false;
             Debug.Log("[EasyAR Spatial Map Editor] 退出播放模式");
+
+            // 1. 销毁玩家碰撞体
+            DestroyPlayerCollider();
+
+            // 2. 清理事件处理器
+            ClearEventLogic();
+
+            // 3. 恢复所有对象的可见性
+            RestoreObjectVisibility();
+
+            // 4. 清理碰撞体调试可视化
+            ClearColliderDebugVisualization();
+
+            // 5. 通知AR事件系统更新连接线显示
+            if (AREventSystemManager.Instance != null)
+            {
+                AREventSystemManager.Instance.OnModeChanged();
+            }
+
+            Debug.Log("[EasyAR Spatial Map Editor] 已退出播放模式");
+        }
+
+        /// <summary>
+        /// 基于当前编辑器关卡数据生成事件逻辑
+        /// </summary>
+        private void GenerateEventLogic()
+        {
+            Debug.Log("[EasyAR Spatial Map Editor] 开始生成事件逻辑");
+
+            if (currentMapSession == null || currentMapSession.Maps.Count == 0)
+            {
+                Debug.LogWarning("[EasyAR Spatial Map Editor] 没有可用的地图数据");
+                return;
+            }
+
+            var mapData = currentMapSession.Maps[0];
+            int eventCount = 0;
+
+            foreach (var obj in mapData.Props)
+            {
+                if (obj == null) continue;
+
+                var arPlacedObject = obj.GetComponent<ARPlacedObject>();
+                if (arPlacedObject?.runtimeData?.events == null || arPlacedObject.runtimeData.events.Count == 0)
+                    continue;
+
+                // 为每个对象创建一个事件处理器，包含该对象的所有事件
+                CreateEventHandlerForObject(obj, arPlacedObject.runtimeData.events);
+                eventCount += arPlacedObject.runtimeData.events.Count;
+            }
+
+            Debug.Log($"[EasyAR Spatial Map Editor] 事件逻辑生成完成，共 {eventCount} 个事件");
+        }
+
+        /// <summary>
+        /// 为单个对象创建事件处理器
+        /// </summary>
+        private void CreateEventHandlerForObject(GameObject obj, List<TriggerActionEventData> events)
+        {
+            // 确保对象有碰撞体
+            var collider = obj.GetComponent<Collider>();
+            if (collider != null && !collider.isTrigger)
+            {
+                DestroyImmediate(collider);
+                collider = null;
+            }
+
+            if (collider == null)
+            {
+                collider = obj.AddComponent<BoxCollider>();
+            }
+            collider.isTrigger = true;
+
+            // 移除现有的事件处理器（如果有）
+            var existingHandler = obj.GetComponent<EventActionHandler>();
+            if (existingHandler != null)
+            {
+                DestroyImmediate(existingHandler);
+            }
+
+            // 创建新的事件处理器
+            var handler = obj.AddComponent<EventActionHandler>();
+            handler.eventList = new List<TriggerActionEventData>(events); // 复制所有事件
+            activeEventHandlers.Add(handler);
+
+            // 注册触发类型
+            bool hasOnEnter = false;
+            bool hasOnExit = false;
+            foreach (var evt in events)
+            {
+                if (evt.triggerType == TriggerType.OnEnter) hasOnEnter = true;
+                if (evt.triggerType == TriggerType.OnExit) hasOnExit = true;
+            }
+
+            if (hasOnEnter) handler.Register(true);
+            if (hasOnExit) handler.Register(false);
+
+            Debug.Log($"[EasyAR Spatial Map Editor] 为对象 {obj.name} 创建事件处理器，包含 {events.Count} 个事件");
+        }
+
+        /// <summary>
+        /// 为对象添加触发器处理器
+        /// </summary>
+        private void AddTriggerHandler(GameObject source, TriggerActionEventData evt, bool onEnter)
+        {
+            // 确保对象有碰撞体
+            var collider = source.GetComponent<Collider>();
+            if (collider != null && !collider.isTrigger)
+            {
+                // 如果有非触发器碰撞体，先移除
+                DestroyImmediate(collider);
+                collider = null;
+            }
+
+            if (collider == null)
+            {
+                collider = source.AddComponent<BoxCollider>();
+            }
+            collider.isTrigger = true;
+
+            // 添加或获取事件处理器
+            var handler = source.GetComponent<EventActionHandler>();
+            if (handler == null)
+            {
+                handler = source.AddComponent<EventActionHandler>();
+                handler.eventList = new List<TriggerActionEventData>();
+                activeEventHandlers.Add(handler);
+            }
+
+            // 重新创建事件列表（清空现有事件，确保数据一致性）
+            if (handler.eventList == null)
+            {
+                handler.eventList = new List<TriggerActionEventData>();
+            }
+
+            // 添加当前事件
+            if (!handler.eventList.Contains(evt))
+            {
+                handler.eventList.Add(evt);
+            }
+
+            // 注册触发类型
+            handler.Register(onEnter);
+
+            Debug.Log($"[EasyAR Spatial Map Editor] 为对象 {source.name} 添加 {(onEnter ? "OnEnter" : "OnExit")} 事件处理器");
+        }
+
+        /// <summary>
+        /// 在AR相机位置创建玩家碰撞体
+        /// </summary>
+        private void CreatePlayerCollider()
+        {
+            if (arCamera == null)
+            {
+                Debug.LogError("[EasyAR Spatial Map Editor] AR相机未就绪，无法创建玩家碰撞体");
+                return;
+            }
+
+            // 创建玩家碰撞体对象
+            playerCollider = new GameObject("Player");
+            playerCollider.tag = "Player";
+
+            // 设置为AR相机的子对象
+            playerCollider.transform.SetParent(arCamera.transform);
+            playerCollider.transform.localPosition = Vector3.zero;
+            playerCollider.transform.localRotation = Quaternion.identity;
+
+            // 添加球形碰撞体（代表玩家的检测范围）
+            var sphereCollider = playerCollider.AddComponent<SphereCollider>();
+            sphereCollider.isTrigger = true;
+            sphereCollider.radius = 0.2f; // 50cm的检测半径
+
+            // 添加刚体以确保物理检测正常工作
+            var rigidbody = playerCollider.AddComponent<Rigidbody>();
+            rigidbody.isKinematic = true;
+            rigidbody.useGravity = false;
+
+            Debug.Log("[EasyAR Spatial Map Editor] 玩家碰撞体已创建");
+        }
+
+        /// <summary>
+        /// 销毁玩家碰撞体
+        /// </summary>
+        private void DestroyPlayerCollider()
+        {
+            if (playerCollider != null)
+            {
+                Destroy(playerCollider);
+                playerCollider = null;
+                Debug.Log("[EasyAR Spatial Map Editor] 玩家碰撞体已销毁");
+            }
+        }
+
+        /// <summary>
+        /// 清理事件逻辑
+        /// </summary>
+        private void ClearEventLogic()
+        {
+            Debug.Log("[EasyAR Spatial Map Editor] 开始清理事件逻辑");
+
+            // 清理所有事件处理器
+            foreach (var handler in activeEventHandlers)
+            {
+                if (handler != null)
+                {
+                    Destroy(handler);
+                }
+            }
+            activeEventHandlers.Clear();
+
+            // 恢复所有对象的碰撞体设置
+            if (currentMapSession != null && currentMapSession.Maps.Count > 0)
+            {
+                var mapData = currentMapSession.Maps[0];
+                foreach (var obj in mapData.Props)
+                {
+                    if (obj == null) continue;
+
+                    // 移除触发器碰撞体，恢复为普通碰撞体（用于编辑模式的选择）
+                    var collider = obj.GetComponent<Collider>();
+                    if (collider != null && collider.isTrigger)
+                    {
+                        DestroyImmediate(collider);
+                        // 重新添加普通碰撞体
+                        var boxCollider = obj.AddComponent<BoxCollider>();
+                        boxCollider.isTrigger = false;
+                    }
+                }
+            }
+
+            Debug.Log("[EasyAR Spatial Map Editor] 事件逻辑清理完成");
+        }
+
+        /// <summary>
+        /// 处理游戏开始时的对象可见性
+        /// </summary>
+        private void ProcessGameStartVisibility()
+        {
+            if (currentMapSession == null || currentMapSession.Maps.Count == 0)
+                return;
+
+            var mapData = currentMapSession.Maps[0];
+            int hiddenCount = 0;
+
+            foreach (var obj in mapData.Props)
+            {
+                if (obj == null) continue;
+
+                var arPlacedObject = obj.GetComponent<ARPlacedObject>();
+                if (arPlacedObject?.runtimeData != null && arPlacedObject.runtimeData.ifHiddenAtGameStart)
+                {
+                    obj.SetActive(false);
+                    hiddenCount++;
+                    Debug.Log($"[EasyAR Spatial Map Editor] 隐藏对象: {obj.name}");
+                }
+            }
+
+            Debug.Log($"[EasyAR Spatial Map Editor] 游戏开始时隐藏了 {hiddenCount} 个对象");
+        }
+
+        /// <summary>
+        /// 恢复所有对象的可见性
+        /// </summary>
+        private void RestoreObjectVisibility()
+        {
+            if (currentMapSession == null || currentMapSession.Maps.Count == 0)
+                return;
+
+            var mapData = currentMapSession.Maps[0];
+            int restoredCount = 0;
+
+            foreach (var obj in mapData.Props)
+            {
+                if (obj == null) continue;
+
+                if (!obj.activeInHierarchy)
+                {
+                    obj.SetActive(true);
+                    restoredCount++;
+                }
+            }
+
+            Debug.Log($"[EasyAR Spatial Map Editor] 恢复了 {restoredCount} 个对象的可见性");
+        }
+
+        /// <summary>
+        /// 设置碰撞体调试可视化
+        /// </summary>
+        private void SetupColliderDebugVisualization()
+        {
+            if (!showColliderDebug) return;
+
+            Debug.Log("[EasyAR Spatial Map Editor] 启用碰撞体调试可视化");
+
+            // 为玩家碰撞体添加可视化
+            if (playerCollider != null)
+            {
+                AddColliderVisualization(playerCollider, Color.green, "Player");
+            }
+
+            // 为所有有事件的对象添加可视化
+            if (currentMapSession != null && currentMapSession.Maps.Count > 0)
+            {
+                var mapData = currentMapSession.Maps[0];
+                foreach (var obj in mapData.Props)
+                {
+                    if (obj == null) continue;
+
+                    var handler = obj.GetComponent<EventActionHandler>();
+                    if (handler != null && handler.eventList.Count > 0)
+                    {
+                        AddColliderVisualization(obj, Color.red, "Trigger");
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 清理碰撞体调试可视化
+        /// </summary>
+        private void ClearColliderDebugVisualization()
+        {
+            Debug.Log("[EasyAR Spatial Map Editor] 清理碰撞体调试可视化");
+
+            // 查找并移除所有调试可视化对象
+            var debugObjects = GameObject.FindGameObjectsWithTag("ColliderDebug");
+            foreach (var obj in debugObjects)
+            {
+                Destroy(obj);
+            }
+        }
+
+        /// <summary>
+        /// 为碰撞体添加可视化
+        /// </summary>
+        private void AddColliderVisualization(GameObject obj, Color color, string debugType)
+        {
+            var collider = obj.GetComponent<Collider>();
+            if (collider == null) return;
+
+            GameObject visualizer = null;
+
+            if (collider is SphereCollider sphereCollider)
+            {
+                // 创建球形可视化
+                visualizer = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                visualizer.transform.localScale = Vector3.one * (sphereCollider.radius * 2);
+                visualizer.transform.position = sphereCollider.bounds.center;
+            }
+            else if (collider is BoxCollider boxCollider)
+            {
+                // 创建立方体可视化
+                visualizer = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                visualizer.transform.localScale = boxCollider.size;
+                visualizer.transform.position = boxCollider.bounds.center;
+                visualizer.transform.rotation = obj.transform.rotation;
+            }
+
+            if (visualizer != null)
+            {
+                // 设置为调试对象
+                visualizer.tag = "ColliderDebug";
+                visualizer.name = $"Debug_{debugType}_{obj.name}";
+
+                // 设置为父对象的子物体，跟随移动
+                visualizer.transform.SetParent(obj.transform);
+
+                // 移除碰撞体，只保留可视化
+                DestroyImmediate(visualizer.GetComponent<Collider>());
+
+                // 设置材质为半透明
+                var renderer = visualizer.GetComponent<Renderer>();
+                if (renderer != null)
+                {
+                    var material = new Material(Shader.Find("Standard"));
+                    material.color = new Color(color.r, color.g, color.b, 0.3f);
+                    material.SetFloat("_Mode", 3); // Transparent
+                    material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                    material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                    material.SetInt("_ZWrite", 0);
+                    material.DisableKeyword("_ALPHATEST_ON");
+                    material.EnableKeyword("_ALPHABLEND_ON");
+                    material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
+                    material.renderQueue = 3000;
+                    renderer.material = material;
+                }
+
+                Debug.Log($"[EasyAR Spatial Map Editor] 为 {obj.name} 添加了 {debugType} 碰撞体可视化");
+            }
+        }
+
+        /// <summary>
+        /// 切换碰撞体调试可视化
+        /// </summary>
+        public void ToggleColliderDebugVisualization()
+        {
+            showColliderDebug = !showColliderDebug;
+
+            if (isPlayMode)
+            {
+                if (showColliderDebug)
+                {
+                    SetupColliderDebugVisualization();
+                }
+                else
+                {
+                    ClearColliderDebugVisualization();
+                }
+            }
+
+            Debug.Log($"[EasyAR Spatial Map Editor] 碰撞体调试可视化: {(showColliderDebug ? "开启" : "关闭")}");
+        }
+
+        /// <summary>
+        /// 实时更新碰撞体调试可视化
+        /// </summary>
+        private void UpdateColliderDebugVisualization()
+        {
+            // 这个方法在 Update 中被调用，用于实时更新可视化
+            // 目前可视化对象已经设置为父子关系，会自动跟随移动
+            // 如果需要额外的实时更新逻辑，可以在这里添加
+        }
+
+        /// <summary>
+        /// 获取指定ID的游戏对象（供EventActionHandler使用）
+        /// </summary>
+        public GameObject GetGameObjectByID(string objectID)
+        {
+            if (currentMapSession == null || currentMapSession.Maps.Count == 0)
+                return null;
+
+            var mapData = currentMapSession.Maps[0];
+            foreach (var obj in mapData.Props)
+            {
+                if (obj == null) continue;
+
+                var arPlacedObject = obj.GetComponent<ARPlacedObject>();
+                if (arPlacedObject?.runtimeData?.ID == objectID)
+                {
+                    return obj;
+                }
+            }
+
+            Debug.LogWarning($"[EasyAR Spatial Map Editor] 未找到ID为 {objectID} 的对象");
+            return null;
         }
 
         /// <summary>
@@ -1391,6 +1892,7 @@ namespace Assets.Scripts.Manager
             isMapLocalized = false;
             isMapBuilding = false;
             isEditMode = false;
+            isPlayMode = false;
 
             Debug.Log("[EasyAR] Session 已销毁，状态已重置");
         }

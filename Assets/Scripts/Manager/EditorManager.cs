@@ -132,26 +132,26 @@ public class EditorManager : singleton<EditorManager>
 
     private void AddTriggerHandler(GameObject source, TriggerActionEventData evt, bool onEnter)
     {
-        var collider = source.GetComponent<Collider>();
-        if (collider is not null)
-        {
-            DestroyImmediate(collider);
-        }
+        // var collider = source.GetComponent<Collider>();
+        // if (collider is not null)
+        // {
+        //     DestroyImmediate(collider);
+        // }
 
-        collider = source.AddComponent<BoxCollider>();
-        collider.isTrigger = true;
+        // collider = source.AddComponent<BoxCollider>();
+        // collider.isTrigger = true;
 
-        var handler = source.GetComponent<EventActionHandler>();
-        if (handler == null)
-        {
-            handler = source.AddComponent<EventActionHandler>();
-            handler.eventList = new List<TriggerActionEventData>();
-        }
+        // var handler = source.GetComponent<EventActionHandler>();
+        // if (handler == null)
+        // {
+        //     handler = source.AddComponent<EventActionHandler>();
+        //     handler.eventList = new List<TriggerActionEventData>();
+        // }
 
-        // Add Event
-        handler.eventList.Clear();
-        handler.eventList.Add(evt);
-        handler.Register(onEnter);
+        // // Add Event
+        // handler.eventList.Clear();
+        // handler.eventList.Add(evt);
+        // handler.Register(onEnter);
     }
 
     public void SaveSceneToJson(string fileName)
@@ -192,7 +192,7 @@ public class EditorManager : singleton<EditorManager>
     }
 
 
-    public void LoadSceneFromJson(string fileName,bool isAR)
+    public void LoadSceneFromJson(string fileName, bool isAR)
     {
 
         if (levelParent is null)
@@ -226,7 +226,7 @@ public class EditorManager : singleton<EditorManager>
         foreach (var data in sceneData.objects)
         {
             var template = templateDB.GetTemplateByID(data.templateID);
-            if (template == null || template.TwoDPrefab == null ||template.ARPrefab == null)
+            if (template == null || template.TwoDPrefab == null || template.ARPrefab == null)
             {
                 Debug.LogWarning($"Template not found for ID: {data.templateID}");
                 continue;
@@ -249,7 +249,7 @@ public class EditorManager : singleton<EditorManager>
             obj.transform.localScale = data.scale;
 
             // TODO: Handle initial visibility
-            obj.SetActive(!data.ifHiddenAtGameStart); 
+            obj.SetActive(!data.ifHiddenAtGameStart);
 
             // Set runtimeData
             var placed = obj.GetComponent<PlacedObject>();

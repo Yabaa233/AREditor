@@ -1247,7 +1247,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1325913786}
         m_TargetAssemblyTypeName: EasyARUIController, Assembly-CSharp
-        m_MethodName: OpenARObjectListSidePanel
+        m_MethodName: OpenGamePLay
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -4003,6 +4003,8 @@ MonoBehaviour:
   mapControllerPrefab: {fileID: 2066685976247908688, guid: 2a14aa120de2c0444bf5ffeacc1ebc4d, type: 3}
   showPointCloud: 1
   autoSaveOnEdit: 1
+  showColliderDebug: 1
+  isMapLocalized: 0
   currentSelectedObject: {fileID: 0}
   EasyARSession: {fileID: 844033004}
 --- !u!114 &1265281319
