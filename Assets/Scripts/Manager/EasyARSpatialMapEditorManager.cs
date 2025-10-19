@@ -767,6 +767,21 @@ namespace Assets.Scripts.Manager
             SaveObjectsInfo();
         }
 
+        public void EnterPlayMode()
+        {
+            if (!isMapLocalized)
+            {
+                Debug.LogWarning("[EasyAR Spatial Map Editor] 地图未本地化，无法进入播放模式");
+                return;
+            }
+            ExitEditMode();
+            Debug.Log("[EasyAR Spatial Map Editor] 进入播放模式");
+        }
+        public void ExitPLayMode()
+        {
+            Debug.Log("[EasyAR Spatial Map Editor] 退出播放模式");
+        }
+
         /// <summary>
         /// 在空间地图上放置游戏对象
         /// </summary>

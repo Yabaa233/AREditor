@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using Assets.Scripts.Manager;
 
 namespace UI.AR
 {
@@ -22,6 +23,7 @@ namespace UI.AR
 
         void Awake()
         {
+            var easyARUIController = FindObjectOfType<EasyARUIController>();
             // 完全复制原版的按钮设置逻辑
             addEventButton.onClick.AddListener(() =>
             {
@@ -37,15 +39,18 @@ namespace UI.AR
                 // AR版本：删除AR对象并关闭面板
                 if (currentARObject != null)
                 {
-                    // 使用统一管理器刷新对象列表
-                    var systemManager = AREventSystemManager.Instance;
-                    if (systemManager != null)
-                    {
-                        systemManager.RefreshAllObjects();
-                    }
-
+                    EasyARSpatialMapEditorManager.Instance.UnregisterObject(currentARObject.gameObject);
                     Destroy(currentARObject.gameObject);
+
+                    //线和UI都不对
+                    easyARUIController.CloseARObjectInspector();
                     CloseInspector();
+
+                    // 使用统一管理器刷新对象列表
+                    // TODO 为什么上面不行？ 没有正常刷新逻辑线
+                    // AREventSystemManager.Instance.RefreshAllObjects();
+                    EasyARSpatialMapEditorManager.Instance.EnterEditMode();
+
                 }
             });
         }

@@ -142,6 +142,13 @@ public class EasyARUIController : MonoBehaviour
         CreateARMapPanel.SetActive(false);
     }
 
+    public void OpenGamePLay()
+    {
+        CloseARObjectListSidePanel();
+        CloseParentSidePanel();
+        EasyARSpatialMapEditorManager.Instance.EnterPlayMode();
+    }
+
     public void OnAddARMap()
     {
         CloseParentSidePanel();
