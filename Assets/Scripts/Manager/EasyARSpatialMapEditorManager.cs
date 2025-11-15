@@ -52,6 +52,10 @@ namespace Assets.Scripts.Manager
         public bool IsPlayMode => isPlayMode;
         public MapSession CurrentMapSession => currentMapSession;
 
+        // 游戏结果事件
+        public event Action OnGameWinEvent;
+        public event Action OnGameLoseEvent;
+
         // 新增：用于跟踪当前选中的对象，避免多个对象同时响应手势
         public ARPlacedObject currentSelectedObject;
 
@@ -1257,6 +1261,123 @@ namespace Assets.Scripts.Manager
             // 这个方法在 Update 中被调用，用于实时更新可视化
             // 目前可视化对象已经设置为父子关系，会自动跟随移动
             // 如果需要额外的实时更新逻辑，可以在这里添加
+        }
+
+        /// <summary>
+        /// 游戏胜利
+        /// </summary>
+        public void OnGameWin()
+        {
+            // if (!isPlayMode)
+            // {
+            //     Debug.LogWarning("[EasyAR Spatial Map Editor] 不在播放模式，无法触发游戏胜利");
+            //     return;
+            // }
+
+            // Debug.Log("[EasyAR Spatial Map Editor] 游戏胜利！");
+
+            // // 触发胜利事件
+            // OnGameWinEvent?.Invoke();
+
+            // 显示胜利提示并退出播放模式
+            StartCoroutine(ShowGameResultAndExitPlayMode("Game Win!", Color.green));
+        }
+
+        /// <summary>
+        /// 游戏失败
+        /// </summary>
+        public void OnGameLose()
+        {
+            // if (!isPlayMode)
+            // {
+            //     Debug.LogWarning("[EasyAR Spatial Map Editor] 不在播放模式，无法触发游戏失败");
+            //     return;
+            // }
+
+            // Debug.Log("[EasyAR Spatial Map Editor] 游戏失败！");
+
+            // // 触发失败事件
+            // OnGameLoseEvent?.Invoke();
+
+            // 显示失败提示并退出播放模式
+            StartCoroutine(ShowGameResultAndExitPlayMode("Game Lose!", Color.red));
+        }
+
+        /// <summary>
+        /// 显示游戏结果并退出播放模式
+        /// </summary>
+        private System.Collections.IEnumerator ShowGameResultAndExitPlayMode(string message, Color color)
+        {
+            // 创建UI显示游戏结果
+            GameObject resultUI = CreateGameResultUI(message, color);
+
+            // 显示2秒
+            yield return new WaitForSeconds(2f);
+
+            // 销毁UI
+            if (resultUI != null)
+            {
+                Destroy(resultUI);
+            }
+
+            // 退出播放模式，返回编辑模式
+            ExitPlayMode();
+
+            // 如果之前在编辑模式，重新进入编辑模式
+            if (isMapLocalized)
+            {
+                EnterEditMode();
+            }
+
+            Debug.Log("[EasyAR Spatial Map Editor] 已返回编辑状态");
+        }
+
+        /// <summary>
+        /// 创建游戏结果UI
+        /// </summary>
+        private GameObject CreateGameResultUI(string message, Color color)
+        {
+            // 创建Canvas
+            GameObject canvasGO = new GameObject("GameResultCanvas");
+            Canvas canvas = canvasGO.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 9999; // 确保在最上层
+
+            canvasGO.AddComponent<UnityEngine.UI.CanvasScaler>();
+            canvasGO.AddComponent<UnityEngine.UI.GraphicRaycaster>();
+
+            // 创建背景面板
+            GameObject panelGO = new GameObject("Panel");
+            panelGO.transform.SetParent(canvasGO.transform, false);
+
+            UnityEngine.UI.Image panelImage = panelGO.AddComponent<UnityEngine.UI.Image>();
+            panelImage.color = new Color(0, 0, 0, 0.8f); // 半透明黑色背景
+
+            RectTransform panelRect = panelGO.GetComponent<RectTransform>();
+            panelRect.anchorMin = Vector2.zero;
+            panelRect.anchorMax = Vector2.one;
+            panelRect.sizeDelta = Vector2.zero;
+
+            // 创建文字
+            GameObject textGO = new GameObject("Text");
+            textGO.transform.SetParent(panelGO.transform, false);
+
+            UnityEngine.UI.Text text = textGO.AddComponent<UnityEngine.UI.Text>();
+            text.text = message;
+            text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            text.fontSize = 60;
+            text.fontStyle = FontStyle.Bold;
+            text.color = color;
+            text.alignment = TextAnchor.MiddleCenter;
+
+            RectTransform textRect = textGO.GetComponent<RectTransform>();
+            textRect.anchorMin = Vector2.zero;
+            textRect.anchorMax = Vector2.one;
+            textRect.sizeDelta = Vector2.zero;
+
+            Debug.Log($"[EasyAR Spatial Map Editor] 创建游戏结果UI: {message}");
+
+            return canvasGO;
         }
 
         /// <summary>

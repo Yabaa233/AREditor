@@ -161,7 +161,7 @@ namespace Assets.Scripts.Manager
             Debug.Log("[EventActionHandler] 游戏胜利！");
 
             // 可以在这里添加胜利UI显示、音效播放等
-            // 例如：GameManager.Instance.OnGameWin();
+            EasyARSpatialMapEditorManager.Instance.OnGameWin();
         }
 
         private void HandleLoseCondition()
@@ -170,7 +170,7 @@ namespace Assets.Scripts.Manager
             Debug.Log("[EventActionHandler] 游戏失败！");
 
             // 可以在这里添加失败UI显示、音效播放等
-            // 例如：GameManager.Instance.OnGameLose();
+            EasyARSpatialMapEditorManager.Instance.OnGameLose();
         }
 
         private void HandleEnableObject(string targetObjectID)

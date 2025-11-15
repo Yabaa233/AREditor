@@ -248,8 +248,9 @@ public class EditorManager : singleton<EditorManager>
             obj.transform.localEulerAngles = data.rotation;
             obj.transform.localScale = data.scale;
 
-            // TODO: Handle initial visibility
-            obj.SetActive(!data.ifHiddenAtGameStart);
+            // 编辑模式下始终显示物体，不受 ifHiddenAtGameStart 影响
+            // ifHiddenAtGameStart 选项只在进入 Play 模式时生效
+            obj.SetActive(true);
 
             // Set runtimeData
             var placed = obj.GetComponent<PlacedObject>();
