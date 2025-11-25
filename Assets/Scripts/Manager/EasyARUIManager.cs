@@ -4,7 +4,7 @@ using Assets.Scripts.Manager;
 using UI.AR;
 using UnityEngine;
 using UnityEngine.UI;
-public class EasyARUIController : MonoBehaviour
+public class EasyARUIManager : singleton<EasyARUIManager>
 {
     [Header("Panels")]
     public GameObject ParentPanel;
@@ -14,6 +14,7 @@ public class EasyARUIController : MonoBehaviour
     public GameObject ObjectSelectionPanel;
     public GameObject ObjectInspectorPanel;
     public GameObject CreateARMapPanel;
+    public GameObject PlayPanel;
 
     [Header("AR Map List")]
     public GameObject ARMapListItem;
@@ -141,6 +142,14 @@ public class EasyARUIController : MonoBehaviour
     {
         CreateARMapPanel.SetActive(false);
     }
+    public void OpenPlayPanel()
+    {
+        PlayPanel.SetActive(true);
+    }
+    public void ClosePlayPanel()
+    {
+        PlayPanel.SetActive(false);
+    }
 
     public void OpenGamePLay()
     {
@@ -151,7 +160,15 @@ public class EasyARUIController : MonoBehaviour
         }
         CloseARObjectListSidePanel();
         CloseParentSidePanel();
+        OpenPlayPanel();
         EasyARSpatialMapEditorManager.Instance.EnterPlayMode();
+    }
+    public void CloseGamePlay()
+    {
+        ClosePlayPanel();
+        // TODO 应该恢复编辑模式,在editor manager中处理
+        OpenParentSidePanel();
+        EasyARSpatialMapEditorManager.Instance.ExitPlayMode();
     }
 
     public void OnAddARMap()

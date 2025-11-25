@@ -343,10 +343,10 @@ namespace Assets.Scripts.Manager
             currentSelectedObject = placedObject;
 
             // 查找UI控制器并调用其OpenARObjectInspector方法
-            var uiController = FindObjectOfType<EasyARUIController>();
-            if (uiController != null)
+            //var uiController = FindObjectOfType<EasyARUIManager>();
+            if (EasyARUIManager.Instance != null)
             {
-                uiController.OpenARObjectInspector();
+                EasyARUIManager.Instance.OpenARObjectInspector();
                 Debug.Log($"[EasyAR] 已通过UI控制器打开AR对象Inspector: {placedObject.name}");
             }
             else
@@ -821,7 +821,10 @@ namespace Assets.Scripts.Manager
             // 4. 处理游戏开始时隐藏的对象
             ProcessGameStartVisibility();
 
-            // 5. 设置碰撞体调试可视化
+            // 5. 隐藏点云
+            HidePointCloud();
+
+            // 6. 设置碰撞体调试可视化
             SetupColliderDebugVisualization();
 
             Debug.Log("[EasyAR Spatial Map Editor] 播放模式已激活");
@@ -850,13 +853,21 @@ namespace Assets.Scripts.Manager
             // 3. 恢复所有对象的可见性
             RestoreObjectVisibility();
 
-            // 4. 清理碰撞体调试可视化
+            // 4. 恢复点云显示
+            ShowPointCloud();
+
+            // 5. 清理碰撞体调试可视化
             ClearColliderDebugVisualization();
 
-            // 5. 通知AR事件系统更新连接线显示
+            // 6. 通知AR事件系统更新连接线显示
             if (AREventSystemManager.Instance != null)
             {
                 AREventSystemManager.Instance.OnModeChanged();
+            }
+
+            if (EasyARUIManager.Instance != null)
+            {
+                EasyARUIManager.Instance.CloseGamePlay();
             }
 
             Debug.Log("[EasyAR Spatial Map Editor] 已退出播放模式");
@@ -1261,6 +1272,42 @@ namespace Assets.Scripts.Manager
             // 这个方法在 Update 中被调用，用于实时更新可视化
             // 目前可视化对象已经设置为父子关系，会自动跟随移动
             // 如果需要额外的实时更新逻辑，可以在这里添加
+        }
+
+        /// <summary>
+        /// 隐藏点云
+        /// </summary>
+        private void HidePointCloud()
+        {
+            if (currentMapSession == null || currentMapSession.Maps.Count == 0)
+                return;
+
+            foreach (var mapData in currentMapSession.Maps)
+            {
+                if (mapData.Controller != null)
+                {
+                    mapData.Controller.ShowPointCloud = false;
+                    Debug.Log($"[EasyAR Spatial Map Editor] 隐藏地图点云: {mapData.Meta.Map.Name}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// 显示点云
+        /// </summary>
+        private void ShowPointCloud()
+        {
+            if (currentMapSession == null || currentMapSession.Maps.Count == 0)
+                return;
+
+            foreach (var mapData in currentMapSession.Maps)
+            {
+                if (mapData.Controller != null)
+                {
+                    mapData.Controller.ShowPointCloud = showPointCloud;
+                    Debug.Log($"[EasyAR Spatial Map Editor] 恢复地图点云显示: {mapData.Meta.Map.Name}");
+                }
+            }
         }
 
         /// <summary>

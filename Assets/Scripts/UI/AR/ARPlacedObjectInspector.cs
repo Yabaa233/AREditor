@@ -23,7 +23,7 @@ namespace UI.AR
 
         void Awake()
         {
-            var easyARUIController = FindObjectOfType<EasyARUIController>();
+            var easyARUIController = FindObjectOfType<EasyARUIManager>();
             // 完全复制原版的按钮设置逻辑
             addEventButton.onClick.AddListener(() =>
             {

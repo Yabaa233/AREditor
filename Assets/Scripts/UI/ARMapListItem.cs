@@ -19,7 +19,7 @@ public class ARMapListItem : MonoBehaviour
     public void DeleteSelf()
     {
         EasyARSpatialMapEditorManager.Instance.DeleteMap(meta);
-        FindObjectOfType<EasyARUIController>().OpenARMapSidePanel();
+        FindObjectOfType<EasyARUIManager>().OpenARMapSidePanel();
         Destroy(gameObject);
     }
 }
