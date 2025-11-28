@@ -43,3 +43,15 @@ MonoBehaviour:
     ARPrefab: {fileID: 7138284100322932080, guid: 9ad801a21f764dc49b6bb1759195f3af, type: 3}
     icon: {fileID: 21300000, guid: e3dc68783919341458e70e2a3ed5ebc1, type: 3}
     defaultEvents: []
+  - templateID: 6
+    templateName: box
+    TwoDPrefab: {fileID: 7138284100322932080, guid: 50cddb93be44af14db532059912b7626, type: 3}
+    ARPrefab: {fileID: 7138284100322932080, guid: e1e6798648ef46042a78509ec2e2267b, type: 3}
+    icon: {fileID: 21300000, guid: b6a92f946da1eb14890b7be94f66fc6f, type: 3}
+    defaultEvents: []
+  - templateID: 7
+    templateName: star
+    TwoDPrefab: {fileID: 7138284100322932080, guid: 28b9e3ca22c585346877d5798700ea7f, type: 3}
+    ARPrefab: {fileID: 7138284100322932080, guid: 13f70b64dc9e3604ebe2745e46aa329d, type: 3}
+    icon: {fileID: 21300000, guid: 549111a49c8214749bbef8520be1612a, type: 3}
+    defaultEvents: []

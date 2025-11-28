@@ -59,6 +59,9 @@ namespace Assets.Scripts.Manager
         // 新增：用于跟踪当前选中的对象，避免多个对象同时响应手势
         public ARPlacedObject currentSelectedObject;
 
+        // 选中框可视化
+        private GameObject selectionBox;
+
         // 基于 EasyAR 样例的集中手势控制系统
         private TouchController touchController;
         private bool isDragging = false;
@@ -414,25 +417,130 @@ namespace Assets.Scripts.Manager
         }
 
         /// <summary>
-        /// 应用选择视觉反馈
+        /// 应用选择视觉反馈 - 使用边框显示
         /// </summary>
         private void ApplySelectionVisual(ARPlacedObject obj, bool selected)
         {
-            var renderers = obj.GetComponentsInChildren<Renderer>();
-            foreach (var renderer in renderers)
+            if (selected)
             {
-                if (renderer != null)
-                {
-                    // 简单的颜色变化作为选择反馈
-                    if (selected)
-                    {
-                        renderer.material.color = Color.yellow;
-                    }
-                    else
-                    {
-                        renderer.material.color = Color.white; // 或原始颜色
-                    }
-                }
+                // 创建选中框
+                CreateSelectionBox(obj.gameObject);
+            }
+            else
+            {
+                // 移除选中框
+                DestroySelectionBox();
+            }
+        }
+
+        /// <summary>
+        /// 创建选中框 - 基于 BoxCollider
+        /// </summary>
+        private void CreateSelectionBox(GameObject target)
+        {
+            // 先销毁旧的选中框
+            DestroySelectionBox();
+
+            // 检查是否有 ARPlacedObject
+            ARPlacedObject arPlaced = target.GetComponent<ARPlacedObject>();
+            if (arPlaced == null)
+            {
+                Debug.LogWarning($"[EasyAR] 目标对象 {target.name} 没有 ARPlacedObject 组件");
+            }
+
+            // 获取 BoxCollider（与 ARPlacedObject 在同一个 GameObject 上）
+            BoxCollider boxCollider = target.GetComponent<BoxCollider>();
+            if (boxCollider == null)
+            {
+                Debug.LogWarning($"[EasyAR] 目标对象 {target.name} 没有 BoxCollider，无法创建选中框");
+                return;
+            }
+
+            // 从 BoxCollider 获取尺寸和中心（本地坐标）
+            Vector3 size = boxCollider.size;
+            Vector3 center = boxCollider.center;
+
+            Debug.Log($"[EasyAR] 目标对象: {target.name}");
+            Debug.Log($"[EasyAR] BoxCollider 本地尺寸: {size}");
+            Debug.Log($"[EasyAR] BoxCollider 本地中心: {center}");
+            Debug.Log($"[EasyAR] GameObject 缩放: {target.transform.localScale}");
+
+            // 创建选中框容器
+            selectionBox = new GameObject("SelectionBox");
+            selectionBox.transform.SetParent(target.transform, false);
+            selectionBox.transform.localPosition = center;
+            selectionBox.transform.localRotation = Quaternion.identity;
+            selectionBox.transform.localScale = Vector3.one; // 确保选中框不受父物体缩放影响
+
+            // 创建线框的12条边（尺寸已经是本地坐标系的尺寸）
+            CreateWireframeCube(selectionBox, size, Color.yellow, 0.01f);
+
+            Debug.Log($"[EasyAR] 选中框创建完成");
+        }
+
+        /// <summary>
+        /// 销毁选中框
+        /// </summary>
+        private void DestroySelectionBox()
+        {
+            if (selectionBox != null)
+            {
+                Destroy(selectionBox);
+                selectionBox = null;
+            }
+        }
+
+        /// <summary>
+        /// 创建线框立方体（12条边）
+        /// </summary>
+        private void CreateWireframeCube(GameObject parent, Vector3 size, Color color, float lineWidth)
+        {
+            Vector3 halfSize = size * 0.5f;
+
+            // 定义立方体的8个顶点
+            Vector3[] vertices = new Vector3[8]
+            {
+                new Vector3(-halfSize.x, -halfSize.y, -halfSize.z), // 0: 左下后
+                new Vector3(halfSize.x, -halfSize.y, -halfSize.z),  // 1: 右下后
+                new Vector3(halfSize.x, halfSize.y, -halfSize.z),   // 2: 右上后
+                new Vector3(-halfSize.x, halfSize.y, -halfSize.z),  // 3: 左上后
+                new Vector3(-halfSize.x, -halfSize.y, halfSize.z),  // 4: 左下前
+                new Vector3(halfSize.x, -halfSize.y, halfSize.z),   // 5: 右下前
+                new Vector3(halfSize.x, halfSize.y, halfSize.z),    // 6: 右上前
+                new Vector3(-halfSize.x, halfSize.y, halfSize.z)    // 7: 左上前
+            };
+
+            // 定义立方体的12条边（每条边由两个顶点索引定义）
+            int[,] edges = new int[12, 2]
+            {
+                {0, 1}, {1, 2}, {2, 3}, {3, 0}, // 后面4条边
+                {4, 5}, {5, 6}, {6, 7}, {7, 4}, // 前面4条边
+                {0, 4}, {1, 5}, {2, 6}, {3, 7}  // 连接前后的4条边
+            };
+
+            // 为每条边创建LineRenderer
+            for (int i = 0; i < 12; i++)
+            {
+                GameObject lineObj = new GameObject($"Edge_{i}");
+                lineObj.transform.SetParent(parent.transform, false);
+                lineObj.transform.localPosition = Vector3.zero;
+
+                LineRenderer lineRenderer = lineObj.AddComponent<LineRenderer>();
+                lineRenderer.startWidth = lineWidth;
+                lineRenderer.endWidth = lineWidth;
+                lineRenderer.positionCount = 2;
+                lineRenderer.useWorldSpace = false;
+
+                // 设置材质和颜色
+                lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
+                lineRenderer.startColor = color;
+                lineRenderer.endColor = color;
+
+                // 设置边的两个端点
+                int v1 = edges[i, 0];
+                int v2 = edges[i, 1];
+                lineRenderer.SetPosition(0, vertices[v1]);
+                lineRenderer.SetPosition(1, vertices[v2]);
             }
         }
 
@@ -1531,6 +1639,9 @@ namespace Assets.Scripts.Manager
                 DeselectObject(currentSelectedObject);
                 currentSelectedObject = null;
             }
+
+            // 确保销毁选中框
+            DestroySelectionBox();
         }
 
         /// <summary>

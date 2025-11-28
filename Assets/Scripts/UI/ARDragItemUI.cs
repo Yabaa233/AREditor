@@ -108,6 +108,14 @@ public class ARDragItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEnd
 
         isDragging = true;
 
+        // 取消之前选中的对象，避免拖拽新物体时旧物体跟着移动
+        if (arManager != null)
+        {
+            arManager.DeselectAllObjects();
+            if (enableDebugLogs)
+                Debug.Log("[ARDrag] 已取消之前选中的对象");
+        }
+
         // 创建拖拽图标
         CreateDragIcon(eventData);
 
