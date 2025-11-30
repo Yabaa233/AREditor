@@ -733,7 +733,7 @@ namespace UI.AR
         {
             // 为自连接创建一个环形可视化
             Vector3 centerPos = sourceTransform.position; // 不需要Y偏移，而是使用回缩
-            float loopRadius = 0.5f; // 环形半径
+            float loopRadius = 0.1f; // 环形半径
 
             // 设置多个点创建环形
             lineRenderer.positionCount = 16; // 使用更多点创建平滑的环

@@ -5,6 +5,7 @@ using easyar;
 using SpatialMap_SparseSpatialMap;
 using TouchController = MyEasyAR.TouchController;
 using UI.AR;
+using Assets.Scripts.DebugTools;
 
 namespace Assets.Scripts.Manager
 {
@@ -1246,6 +1247,7 @@ namespace Assets.Scripts.Manager
 
         /// <summary>
         /// 设置碰撞体调试可视化
+        /// 只为Player和ARPlacedObject显示碰撞框
         /// </summary>
         private void SetupColliderDebugVisualization()
         {
@@ -1256,10 +1258,10 @@ namespace Assets.Scripts.Manager
             // 为玩家碰撞体添加可视化
             if (playerCollider != null)
             {
-                AddColliderVisualization(playerCollider, Color.green, "Player");
+                AddColliderVisualizer(playerCollider, Color.green);
             }
 
-            // 为所有有事件的对象添加可视化
+            // 只为ARPlacedObject添加可视化
             if (currentMapSession != null && currentMapSession.Maps.Count > 0)
             {
                 var mapData = currentMapSession.Maps[0];
@@ -1267,10 +1269,18 @@ namespace Assets.Scripts.Manager
                 {
                     if (obj == null) continue;
 
-                    var handler = obj.GetComponent<EventActionHandler>();
-                    if (handler != null && handler.eventList.Count > 0)
+                    // 检查是否是ARPlacedObject
+                    var arPlacedObject = obj.GetComponent<ARPlacedObject>();
+                    if (arPlacedObject != null)
                     {
-                        AddColliderVisualization(obj, Color.red, "Trigger");
+                        var collider = obj.GetComponent<Collider>();
+                        if (collider != null)
+                        {
+                            // 根据是否有事件处理器决定颜色
+                            var handler = obj.GetComponent<EventActionHandler>();
+                            Color color = (handler != null && handler.eventList.Count > 0) ? Color.red : Color.cyan;
+                            AddColliderVisualizer(obj, color);
+                        }
                     }
                 }
             }
@@ -1283,79 +1293,86 @@ namespace Assets.Scripts.Manager
         {
             Debug.Log("[EasyAR Spatial Map Editor] 清理碰撞体调试可视化");
 
-            // 查找并移除所有调试可视化对象
-            var debugObjects = GameObject.FindGameObjectsWithTag("ColliderDebug");
-            foreach (var obj in debugObjects)
+            // 移除玩家碰撞体上的可视化组件
+            if (playerCollider != null)
             {
-                Destroy(obj);
+                var visualizer = playerCollider.GetComponent<ColliderVisualizer>();
+                if (visualizer != null)
+                    Destroy(visualizer);
+            }
+
+            // 移除所有场景对象上的可视化组件
+            if (currentMapSession != null && currentMapSession.Maps.Count > 0)
+            {
+                var mapData = currentMapSession.Maps[0];
+                foreach (var obj in mapData.Props)
+                {
+                    if (obj == null) continue;
+
+                    var visualizer = obj.GetComponent<ColliderVisualizer>();
+                    if (visualizer != null)
+                        Destroy(visualizer);
+                }
             }
         }
 
         /// <summary>
-        /// 为碰撞体添加可视化
+        /// 为对象添加碰撞体可视化组件
         /// </summary>
-        private void AddColliderVisualization(GameObject obj, Color color, string debugType)
+        private void AddColliderVisualizer(GameObject obj, Color color)
         {
+            if (obj == null) return;
+
             var collider = obj.GetComponent<Collider>();
             if (collider == null) return;
 
-            GameObject visualizer = null;
-
-            if (collider is SphereCollider sphereCollider)
+            // 检查是否已有可视化组件
+            var existingVisualizer = obj.GetComponent<ColliderVisualizer>();
+            if (existingVisualizer != null)
             {
-                // 创建球形可视化
-                visualizer = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                visualizer.transform.localScale = Vector3.one * (sphereCollider.radius * 2);
-                visualizer.transform.position = sphereCollider.bounds.center;
-            }
-            else if (collider is BoxCollider boxCollider)
-            {
-                // 创建立方体可视化
-                visualizer = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                visualizer.transform.localScale = boxCollider.size;
-                visualizer.transform.position = boxCollider.bounds.center;
-                visualizer.transform.rotation = obj.transform.rotation;
+                existingVisualizer.wireframeColor = color;
+                return;
             }
 
-            if (visualizer != null)
-            {
-                // 设置为调试对象
-                visualizer.tag = "ColliderDebug";
-                visualizer.name = $"Debug_{debugType}_{obj.name}";
+            // 添加可视化组件
+            var visualizer = obj.AddComponent<ColliderVisualizer>();
+            visualizer.wireframeColor = color;
+            visualizer.lineWidth = 0.01f; // 调细线宽
 
-                // 设置为父对象的子物体，跟随移动
-                visualizer.transform.SetParent(obj.transform);
-
-                // 移除碰撞体，只保留可视化
-                DestroyImmediate(visualizer.GetComponent<Collider>());
-
-                // 设置材质为半透明
-                var renderer = visualizer.GetComponent<Renderer>();
-                if (renderer != null)
-                {
-                    var material = new Material(Shader.Find("Standard"));
-                    material.color = new Color(color.r, color.g, color.b, 0.3f);
-                    material.SetFloat("_Mode", 3); // Transparent
-                    material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-                    material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-                    material.SetInt("_ZWrite", 0);
-                    material.DisableKeyword("_ALPHATEST_ON");
-                    material.EnableKeyword("_ALPHABLEND_ON");
-                    material.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-                    material.renderQueue = 3000;
-                    renderer.material = material;
-                }
-
-                Debug.Log($"[EasyAR Spatial Map Editor] 为 {obj.name} 添加了 {debugType} 碰撞体可视化");
-            }
+            Debug.Log($"[EasyAR Spatial Map Editor] 为 {obj.name} 添加了碰撞体可视化组件");
         }
 
         /// <summary>
-        /// 切换碰撞体调试可视化
+        /// 切换碰撞体调试可视化（无参数版本）
         /// </summary>
         public void ToggleColliderDebugVisualization()
         {
             showColliderDebug = !showColliderDebug;
+
+            if (isPlayMode)
+            {
+                if (showColliderDebug)
+                {
+                    SetupColliderDebugVisualization();
+                }
+                else
+                {
+                    ClearColliderDebugVisualization();
+                }
+            }
+
+            Debug.Log($"[EasyAR Spatial Map Editor] 碰撞体调试可视化: {(showColliderDebug ? "开启" : "关闭")}");
+        }
+
+        /// <summary>
+        /// 设置碰撞体调试可视化（用于Toggle的OnValueChanged）
+        /// </summary>
+        /// <param name="isOn">Toggle的开关状态</param>
+        public void SetColliderDebugVisualization(bool isOn)
+        {
+            Debug.Log($"[EasyAR Spatial Map Editor] SetColliderDebugVisualization called with isOn={isOn}");
+
+            showColliderDebug = isOn;
 
             if (isPlayMode)
             {
