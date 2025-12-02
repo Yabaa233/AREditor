@@ -20,6 +20,10 @@ public class EasyARUIManager : singleton<EasyARUIManager>
     public GameObject ARMapListItem;
     public GameObject ARMapListContent;
 
+    [Header("2D Map List")]
+    public GameObject TwoDMapListItem;
+    public GameObject TwoDMapListContent;
+
     [Header("Placed Object Template Database")]
     public PlacedObjectTemplateDatabase templateDB;
 
@@ -38,6 +42,7 @@ public class EasyARUIManager : singleton<EasyARUIManager>
     public void Open2DMapSidePanel()
     {
         TwoDMapSidePanel.SetActive(true);
+        Update2DMapList();
     }
     public void Close2DMapSidePanel()
     {
@@ -124,6 +129,89 @@ public class EasyARUIManager : singleton<EasyARUIManager>
             mapListItemComponent.meta = map;
         }
 
+    }
+
+    /// <summary>
+    /// 更新 2D 地图列表
+    /// </summary>
+    private void Update2DMapList()
+    {
+        if (TwoDMapListContent == null)
+        {
+            Debug.LogError("TwoDMapListContent 未赋值");
+            return;
+        }
+
+        // 清空现有列表项
+        foreach (Transform child in TwoDMapListContent.transform)
+        {
+            Destroy(child.gameObject);
+        }
+
+        // 扫描所有 .json 文件
+        string savePath = Application.persistentDataPath;
+        Debug.Log($"[2D Map List] 扫描路径: {savePath}");
+
+        if (!System.IO.Directory.Exists(savePath))
+        {
+            Debug.LogWarning("保存路径不存在: " + savePath);
+            return;
+        }
+
+        string[] jsonFiles = System.IO.Directory.GetFiles(savePath, "*.json");
+        Debug.Log($"[2D Map List] 找到 {jsonFiles.Length} 个 JSON 文件");
+
+        if (jsonFiles.Length == 0)
+        {
+            Debug.Log("没有找到任何关卡文件");
+            return;
+        }
+
+        // 为每个文件创建列表项
+        foreach (string filePath in jsonFiles)
+        {
+            string fileName = System.IO.Path.GetFileName(filePath);
+            Debug.Log($"[2D Map List] 处理文件: {fileName} (完整路径: {filePath})");
+
+            // 读取并显示JSON内容
+            try
+            {
+                string jsonContent = System.IO.File.ReadAllText(filePath);
+                Debug.Log($"[2D Map List] JSON 内容:\n{jsonContent}");
+
+                // 尝试获取文件大小
+                System.IO.FileInfo fileInfo = new System.IO.FileInfo(filePath);
+                Debug.Log($"[2D Map List] 文件大小: {fileInfo.Length} 字节, 创建时间: {fileInfo.CreationTime}, 修改时间: {fileInfo.LastWriteTime}");
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[2D Map List] 读取文件失败: {e.Message}");
+            }
+
+            if (TwoDMapListItem == null)
+            {
+                Debug.LogError("TwoDMapListItem Prefab 未赋值");
+                continue;
+            }
+
+            // 创建列表项
+            GameObject item = Instantiate(TwoDMapListItem, TwoDMapListContent.transform);
+            Debug.Log($"[2D Map List] 已创建列表项 GameObject: {item.name}");
+
+            // 设置列表项数据
+            var itemScript = item.GetComponent<UI.AR.TwoDMapListItem>();
+            if (itemScript != null)
+            {
+                itemScript.fileName = fileName;
+                Debug.Log($"[2D Map List] 已设置文件名: {fileName}");
+            }
+            else
+            {
+                Debug.LogError("TwoDMapListItem 上未找到 TwoDMapListItem 脚本组件");
+            }
+        }
+
+        Debug.Log($"[2D Map List] 列表更新完成，共加载 {jsonFiles.Length} 个关卡文件");
     }
 
     public void CloseParentSidePanel()

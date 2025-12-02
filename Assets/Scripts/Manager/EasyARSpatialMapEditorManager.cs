@@ -394,8 +394,18 @@ namespace Assets.Scripts.Manager
             // 再次检查相机状态
             if (touchController != null && arCamera != null && arCamera.isActiveAndEnabled && obj != null)
             {
-                touchController.TurnOn(obj.transform, arCamera, true, true, true, true);
-                Debug.Log($"[EasyAR] 选中对象: {obj.name}");
+                // 启用向下投影功能，使物体贴合地面/桌面
+                touchController.TurnOn(
+                    obj.transform,
+                    arCamera,
+                    true,  // 单指拖动
+                    true,  // 双指移动
+                    true,  // 双指缩放
+                    true,  // 双指旋转
+                    false,  // 启用向下投影
+                    GroundProjectionRaycast // 投影回调
+                );
+                Debug.Log($"[EasyAR] 选中对象: {obj.name} (启用地面投影)");
             }
         }
 
@@ -740,6 +750,49 @@ namespace Assets.Scripts.Manager
         {
             RefreshAvailableMaps();
             Debug.Log("[EasyAR Spatial Map Editor] 保存后自动刷新地图列表");
+        }
+
+        /// <summary>
+        /// 向下投影射线检测 - 从给定位置向下发射射线，找到地面/桌面的交点
+        /// </summary>
+        private easyar.Optional<Vector3> GroundProjectionRaycast(Vector3 fromPosition)
+        {
+            if (currentMapSession == null || !isMapLocalized)
+            {
+                return new easyar.Optional<Vector3>();
+            }
+
+            // 从给定位置向下发射射线
+            Vector3 rayOrigin = fromPosition;
+            Vector3 rayDirection = Vector3.down;
+            float maxDistance = 10f; // 最大检测距离
+
+            // 使用 Physics.Raycast 检测与地图点云的碰撞
+            RaycastHit hit;
+            if (Physics.Raycast(rayOrigin, rayDirection, out hit, maxDistance))
+            {
+                // 找到了碰撞点，返回该位置
+                Debug.Log($"[EasyAR] 向下投影成功: {hit.point}, 距离: {hit.distance:F3}m");
+                return easyar.Optional<Vector3>.CreateSome(hit.point);
+            }
+
+            // 如果 Physics.Raycast 没有找到，尝试使用屏幕空间投影
+            // 将世界坐标转换为屏幕坐标，然后使用 HitTestOne
+            if (arCamera != null)
+            {
+                Vector3 screenPos = arCamera.WorldToScreenPoint(fromPosition);
+                Vector2 normalizedScreenPos = new Vector2(screenPos.x / Screen.width, screenPos.y / Screen.height);
+                var hitResult = currentMapSession.HitTestOne(normalizedScreenPos);
+
+                if (hitResult.OnSome)
+                {
+                    Debug.Log($"[EasyAR] 屏幕投影成功: {hitResult.Value}");
+                    return hitResult;
+                }
+            }
+
+            Debug.Log($"[EasyAR] 向下投影失败，保持原位置");
+            return new easyar.Optional<Vector3>();
         }
 
         /// <summary>

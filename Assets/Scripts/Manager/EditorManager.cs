@@ -32,11 +32,9 @@ public class EditorManager : singleton<EditorManager>
 
     void Start()
     {
-    }
-
-    /// <summary>
-    /// Register an Object
-    /// </summary>
+    }    /// <summary>
+         /// Register an Object
+         /// </summary>
     public void RegisterObject(GameObject obj)
     {
         if (!LevelObjects.Contains(obj))
@@ -357,10 +355,30 @@ public class EditorManager : singleton<EditorManager>
         return newID;
     }
 
-    public void ChangeScene(string name)
+    private void ChangeScene(string name)
     {
+        // 清理当前场景的对象引用
+        LevelObjects.Clear();
+        focusedObject = null;
+        levelParent = null;
+
+        // 加载新场景
         SceneManager.LoadScene(name);
     }
 
+    /// <summary>
+    /// 跳转到 2D 编辑器场景
+    /// </summary>
+    public void GoToInterface()
+    {
+        ChangeScene("Interface");
+    }
 
+    /// <summary>
+    /// 跳转到 AR 场景
+    /// </summary>
+    public void GoToEasyAR()
+    {
+        ChangeScene("EasyAR");
+    }
 }

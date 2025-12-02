@@ -27,6 +27,10 @@ namespace MyEasyAR
         private GestureControl curGesture;
         private float targetCamDistance;
 
+        // 向下投影功能
+        private bool enableGroundProjection = false;
+        private System.Func<Vector3, easyar.Optional<Vector3>> groundProjectionCallback;
+
         private enum GestureControl
         {
             NoTouch,
@@ -152,7 +156,7 @@ namespace MyEasyAR
             }
         }
 
-        public void TurnOn(Transform target, Camera cam, bool isOneFingerDraggable, bool isTwoFingerDraggable, bool isTwoFingerScalable, bool isTwoFingerRotatable)
+        public void TurnOn(Transform target, Camera cam, bool isOneFingerDraggable, bool isTwoFingerDraggable, bool isTwoFingerScalable, bool isTwoFingerRotatable, bool enableGroundProjection = false, System.Func<Vector3, easyar.Optional<Vector3>> projectionCallback = null)
         {
             StopAllCoroutines();
             controlTarget = target;
@@ -161,6 +165,8 @@ namespace MyEasyAR
             this.isTwoFingerDraggable = isTwoFingerDraggable;
             this.isTwoFingerScalable = isTwoFingerScalable;
             this.isTwoFingerRotatable = isTwoFingerRotatable;
+            this.enableGroundProjection = enableGroundProjection;
+            this.groundProjectionCallback = projectionCallback;
             curGesture = GestureControl.NoTouch;
         }
 
@@ -186,7 +192,25 @@ namespace MyEasyAR
                 var touchV3 = new Vector3(Input.GetTouch(0).deltaPosition.x / Screen.width, Input.GetTouch(0).deltaPosition.y / Screen.height, 0);
                 var addV3 = cameraTarget.transform.localToWorldMatrix.MultiplyVector(touchV3);
                 var newPos = controlTarget.position + addV3 * targetCamDistance;
-                controlTarget.position = newPos;
+
+                // 应用向下投影
+                if (enableGroundProjection && groundProjectionCallback != null)
+                {
+                    var projectedPos = ApplyGroundProjection(newPos);
+                    if (projectedPos.OnSome)
+                    {
+                        controlTarget.position = projectedPos.Value;
+                    }
+                    else
+                    {
+                        controlTarget.position = newPos; // 如果投影失败，使用原位置
+                    }
+                }
+                else
+                {
+                    controlTarget.position = newPos;
+                }
+
                 yield return 0;
             }
         }
@@ -215,7 +239,24 @@ namespace MyEasyAR
                     var Cam_Forward_XZ = Vector3.ProjectOnPlane(Cam_Forward, Vector3.up);
 
                     var newPos = rawTargetPos + (Vector3.Dot(yMovement, Cam_Forward) > 0 ? Cam_Forward_XZ : -Cam_Forward_XZ) * yMovement.magnitude * targetCamDistance * 2 / 1000;
-                    controlTarget.position = newPos;
+
+                    // 应用向下投影
+                    if (enableGroundProjection && groundProjectionCallback != null)
+                    {
+                        var projectedPos = ApplyGroundProjection(newPos);
+                        if (projectedPos.OnSome)
+                        {
+                            controlTarget.position = projectedPos.Value;
+                        }
+                        else
+                        {
+                            controlTarget.position = newPos;
+                        }
+                    }
+                    else
+                    {
+                        controlTarget.position = newPos;
+                    }
                 }
                 yield return 0;
             }
@@ -314,6 +355,24 @@ namespace MyEasyAR
                 xMovement = Vector3.zero;
                 yMovement = Vector3.zero;
             }
+        }
+
+        /// <summary>
+        /// 应用向下投影 - 沿物体Y轴负方向投影到地面/桌面
+        /// </summary>
+        private easyar.Optional<Vector3> ApplyGroundProjection(Vector3 targetPosition)
+        {
+            if (groundProjectionCallback == null || controlTarget == null)
+            {
+                return new easyar.Optional<Vector3>();
+            }
+
+            // 从目标位置沿物体Y轴负方向发射射线
+            Vector3 rayOrigin = targetPosition;
+            Vector3 rayDirection = -controlTarget.up; // 物体Y轴负方向
+
+            // 使用回调函数进行投影检测
+            return groundProjectionCallback(rayOrigin);
         }
     }
 }
