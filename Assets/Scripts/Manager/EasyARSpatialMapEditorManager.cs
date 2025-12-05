@@ -26,6 +26,12 @@ namespace Assets.Scripts.Manager
         [Header("Debug Settings")]
         public bool showColliderDebug = false; // 显示碰撞体调试信息
 
+        [Header("Mesh Alignment")]
+        public GameObject denseMeshPrefab; // 精细mesh预制体（在Inspector中指定）
+        private bool isMeshAlignmentMode = false; // 是否处于mesh对齐模式
+        private GameObject currentAlignedMeshInstance; // 当前实例化的mesh对象
+        private SavedMeshTransform savedMeshTransform; // 保存的mesh变换信息
+
         // 当前地图会话 - 现在可以直接使用 EasyAR 示例中的类型
         private MapSession currentMapSession;
         private List<MapMeta> availableMaps = new List<MapMeta>();
@@ -51,6 +57,7 @@ namespace Assets.Scripts.Manager
         public bool IsMapBuilding => isMapBuilding;
         public bool IsEditMode => isEditMode;
         public bool IsPlayMode => isPlayMode;
+        public bool IsMeshAlignmentMode => isMeshAlignmentMode;
         public MapSession CurrentMapSession => currentMapSession;
 
         // 游戏结果事件
@@ -80,6 +87,23 @@ namespace Assets.Scripts.Manager
         private Camera arCamera;      // 缓存AR相机引用
         [Header("EasyAR Session Object")]
         public GameObject EasyARSession;
+
+        /// <summary>
+        /// 保存的mesh变换信息
+        /// </summary>
+        private class SavedMeshTransform
+        {
+            public Vector3 position;
+            public Quaternion rotation;
+            public Vector3 scale;
+
+            public SavedMeshTransform(Transform transform)
+            {
+                position = transform.localPosition;
+                rotation = transform.localRotation;
+                scale = transform.localScale;
+            }
+        }
 
         private void Start()
         {
@@ -124,6 +148,16 @@ namespace Assets.Scripts.Manager
             if (isPlayMode && showColliderDebug)
             {
                 UpdateColliderDebugVisualization();
+            }
+
+            // 确保mesh可见性符合当前状态
+            if (currentAlignedMeshInstance != null)
+            {
+                bool shouldBeVisible = isMeshAlignmentMode;
+                if (currentAlignedMeshInstance.activeSelf != shouldBeVisible)
+                {
+                    currentAlignedMeshInstance.SetActive(shouldBeVisible);
+                }
             }
         }
 
@@ -753,7 +787,7 @@ namespace Assets.Scripts.Manager
         }
 
         /// <summary>
-        /// 向下投影射线检测 - 从给定位置向下发射射线，找到地面/桌面的交点
+        /// 向下投影射线检测 - 优先检测mesh，fallback到点云
         /// </summary>
         private easyar.Optional<Vector3> GroundProjectionRaycast(Vector3 fromPosition)
         {
@@ -767,17 +801,32 @@ namespace Assets.Scripts.Manager
             Vector3 rayDirection = Vector3.down;
             float maxDistance = 10f; // 最大检测距离
 
-            // 使用 Physics.Raycast 检测与地图点云的碰撞
+            // 优先检测mesh（如果mesh存在且可见）
+            if (currentAlignedMeshInstance != null && currentAlignedMeshInstance.activeSelf)
+            {
+                RaycastHit meshHit;
+                if (Physics.Raycast(rayOrigin, rayDirection, out meshHit, maxDistance))
+                {
+                    // 验证是否命中mesh
+                    if (meshHit.collider.gameObject == currentAlignedMeshInstance ||
+                        meshHit.collider.transform.IsChildOf(currentAlignedMeshInstance.transform))
+                    {
+                        Debug.Log($"[EasyAR] Mesh投影成功: {meshHit.point}, 距离: {meshHit.distance:F3}m");
+                        return easyar.Optional<Vector3>.CreateSome(meshHit.point);
+                    }
+                }
+            }
+
+            // Fallback: 使用 Physics.Raycast 检测其他碰撞体
             RaycastHit hit;
             if (Physics.Raycast(rayOrigin, rayDirection, out hit, maxDistance))
             {
                 // 找到了碰撞点，返回该位置
-                Debug.Log($"[EasyAR] 向下投影成功: {hit.point}, 距离: {hit.distance:F3}m");
+                Debug.Log($"[EasyAR] 向下投影成功（非mesh）: {hit.point}, 距离: {hit.distance:F3}m");
                 return easyar.Optional<Vector3>.CreateSome(hit.point);
             }
 
-            // 如果 Physics.Raycast 没有找到，尝试使用屏幕空间投影
-            // 将世界坐标转换为屏幕坐标，然后使用 HitTestOne
+            // 如果 Physics.Raycast 没有找到，尝试使用屏幕空间投影到点云
             if (arCamera != null)
             {
                 Vector3 screenPos = arCamera.WorldToScreenPoint(fromPosition);
@@ -786,7 +835,7 @@ namespace Assets.Scripts.Manager
 
                 if (hitResult.OnSome)
                 {
-                    Debug.Log($"[EasyAR] 屏幕投影成功: {hitResult.Value}");
+                    Debug.Log($"[EasyAR] 点云投影成功: {hitResult.Value}");
                     return hitResult;
                 }
             }
@@ -864,6 +913,25 @@ namespace Assets.Scripts.Manager
             }
 
             mapData.Meta.Props = propInfos;
+
+            // 保存mesh对齐信息
+            if (currentAlignedMeshInstance != null && savedMeshTransform != null && denseMeshPrefab != null)
+            {
+                mapData.Meta.MeshAlignment = new MapMeta.MeshAlignmentInfo
+                {
+                    MeshPrefabName = denseMeshPrefab.name,
+                    Position = new float[3] { savedMeshTransform.position.x, savedMeshTransform.position.y, savedMeshTransform.position.z },
+                    Rotation = new float[4] { savedMeshTransform.rotation.x, savedMeshTransform.rotation.y, savedMeshTransform.rotation.z, savedMeshTransform.rotation.w },
+                    Scale = new float[3] { savedMeshTransform.scale.x, savedMeshTransform.scale.y, savedMeshTransform.scale.z }
+                };
+                Debug.Log($"[EasyAR] 保存mesh对齐信息到MapMeta - Prefab: {denseMeshPrefab.name}, Pos: [{savedMeshTransform.position.x}, {savedMeshTransform.position.y}, {savedMeshTransform.position.z}], Rot: [{savedMeshTransform.rotation.x}, {savedMeshTransform.rotation.y}, {savedMeshTransform.rotation.z}, {savedMeshTransform.rotation.w}], Scale: [{savedMeshTransform.scale.x}, {savedMeshTransform.scale.y}, {savedMeshTransform.scale.z}]");
+            }
+            else
+            {
+                mapData.Meta.MeshAlignment = null;
+                Debug.Log($"[EasyAR] 未保存mesh对齐信息 - currentAlignedMeshInstance: {currentAlignedMeshInstance != null}, savedMeshTransform: {savedMeshTransform != null}, denseMeshPrefab: {denseMeshPrefab != null}");
+            }
+
             MapMetaManager.Save(mapData.Meta);
         }
 
@@ -900,6 +968,12 @@ namespace Assets.Scripts.Manager
 
             isEditMode = true;
             Debug.Log("[EasyAR Spatial Map Editor] 进入编辑模式");
+
+            // 确保mesh在编辑模式下隐藏
+            if (currentAlignedMeshInstance != null && !isMeshAlignmentMode)
+            {
+                currentAlignedMeshInstance.SetActive(false);
+            }
 
             // 通知AR事件系统更新连接线显示
             if (AREventSystemManager.Instance != null)
@@ -968,6 +1042,12 @@ namespace Assets.Scripts.Manager
             isPlayMode = true;
             Debug.Log("[EasyAR Spatial Map Editor] 进入播放模式");
 
+            // 确保mesh在播放模式下隐藏
+            if (currentAlignedMeshInstance != null)
+            {
+                currentAlignedMeshInstance.SetActive(false);
+            }
+
             // 1. 为所有AR对象生成事件逻辑
             GenerateEventLogic();
 
@@ -1017,6 +1097,12 @@ namespace Assets.Scripts.Manager
 
             // 4. 恢复点云显示
             ShowPointCloud();
+
+            // 4.5. 确保mesh在退出播放模式后仍然隐藏
+            if (currentAlignedMeshInstance != null)
+            {
+                currentAlignedMeshInstance.SetActive(false);
+            }
 
             // 5. 清理碰撞体调试可视化
             ClearColliderDebugVisualization();
@@ -1995,6 +2081,56 @@ namespace Assets.Scripts.Manager
 
             Debug.Log("[EasyAR Spatial Map Editor] 对象恢复完成");
 
+            // 恢复mesh对齐信息（如果有）
+            if (mapData.Meta.MeshAlignment != null && denseMeshPrefab != null)
+            {
+                Debug.Log($"[EasyAR Spatial Map Editor] 发现mesh对齐信息 - Prefab: {mapData.Meta.MeshAlignment.MeshPrefabName}, Pos: [{mapData.Meta.MeshAlignment.Position[0]}, {mapData.Meta.MeshAlignment.Position[1]}, {mapData.Meta.MeshAlignment.Position[2]}]");
+
+                // 验证prefab名称是否匹配
+                if (denseMeshPrefab.name == mapData.Meta.MeshAlignment.MeshPrefabName)
+                {
+                    // 实例化mesh
+                    currentAlignedMeshInstance = Instantiate(denseMeshPrefab);
+                    currentAlignedMeshInstance.name = "AlignedMesh_" + denseMeshPrefab.name;
+
+                    // 挂载到地图控制器下
+                    currentAlignedMeshInstance.transform.SetParent(mapData.Controller.transform, false);
+
+                    // 恢复变换
+                    var meshInfo = mapData.Meta.MeshAlignment;
+                    currentAlignedMeshInstance.transform.localPosition = new Vector3(meshInfo.Position[0], meshInfo.Position[1], meshInfo.Position[2]);
+                    currentAlignedMeshInstance.transform.localRotation = new Quaternion(meshInfo.Rotation[0], meshInfo.Rotation[1], meshInfo.Rotation[2], meshInfo.Rotation[3]);
+                    currentAlignedMeshInstance.transform.localScale = new Vector3(meshInfo.Scale[0], meshInfo.Scale[1], meshInfo.Scale[2]);
+
+                    Debug.Log($"[EasyAR] 已恢复mesh变换 - localPos: {currentAlignedMeshInstance.transform.localPosition}, localRot: {currentAlignedMeshInstance.transform.localRotation.eulerAngles}, localScale: {currentAlignedMeshInstance.transform.localScale}");
+
+                    // 保存到savedMeshTransform
+                    savedMeshTransform = new SavedMeshTransform(currentAlignedMeshInstance.transform);
+                    Debug.Log($"[EasyAR] 已保存到savedMeshTransform: pos={savedMeshTransform.position}, rot={savedMeshTransform.rotation.eulerAngles}, scale={savedMeshTransform.scale}");
+
+                    // 确保mesh碰撞体存在（用于射线检测）
+                    if (currentAlignedMeshInstance.GetComponent<Collider>() == null)
+                    {
+                        var meshCollider = currentAlignedMeshInstance.AddComponent<MeshCollider>();
+                        meshCollider.convex = false;
+                        Debug.Log("[EasyAR] 为恢复的mesh添加MeshCollider");
+                    }
+
+                    // 立即隐藏mesh（仅在对齐模式下可见）
+                    currentAlignedMeshInstance.SetActive(false);
+
+                    Debug.Log("[EasyAR Spatial Map Editor] Mesh恢复完成并隐藏");
+                }
+                else
+                {
+                    Debug.LogWarning($"[EasyAR] Mesh prefab名称不匹配：保存的是{mapData.Meta.MeshAlignment.MeshPrefabName}，当前是{denseMeshPrefab.name}");
+                }
+            }
+            else
+            {
+                Debug.Log($"[EasyAR] 无mesh对齐信息 - MeshAlignment: {mapData.Meta.MeshAlignment != null}, denseMeshPrefab: {denseMeshPrefab != null}");
+            }
+
             // 对象恢复完成后，通知AR事件系统但不立即刷新连线
             // 连线刷新将在进入编辑模式时进行
             if (AREventSystemManager.Instance != null)
@@ -2222,6 +2358,16 @@ namespace Assets.Scripts.Manager
                 currentSelectedObject = null;
             }
 
+            // 清理mesh实例
+            if (currentAlignedMeshInstance != null)
+            {
+                Destroy(currentAlignedMeshInstance);
+                currentAlignedMeshInstance = null;
+                Debug.Log("[EasyAR] 销毁mesh实例");
+            }
+            savedMeshTransform = null;
+            isMeshAlignmentMode = false;
+
             if (currentMapSession != null)
             {
                 currentMapSession.Dispose();
@@ -2336,5 +2482,247 @@ namespace Assets.Scripts.Manager
             // }
             RegisterObject(obj);
         }
+
+        #region Mesh Alignment Methods
+
+        /// <summary>
+        /// 开始Mesh对齐模式
+        /// </summary>
+        public void StartMeshAlignment()
+        {
+            if (!isMapLocalized)
+            {
+                Debug.LogWarning("[EasyAR] 地图未本地化，无法开始mesh对齐");
+                return;
+            }
+
+            if (denseMeshPrefab == null)
+            {
+                Debug.LogWarning("[EasyAR] denseMeshPrefab未指定，无法开始mesh对齐");
+                return;
+            }
+
+            if (isMeshAlignmentMode)
+            {
+                Debug.LogWarning("[EasyAR] 已经处于mesh对齐模式");
+                return;
+            }
+
+            Debug.Log($"[EasyAR] 开始Mesh对齐模式 - savedMeshTransform存在: {savedMeshTransform != null}");
+            if (savedMeshTransform != null)
+            {
+                Debug.Log($"[EasyAR] savedMeshTransform值: pos={savedMeshTransform.position}, rot={savedMeshTransform.rotation.eulerAngles}, scale={savedMeshTransform.scale}");
+            }
+
+            // 如果已有实例，先销毁
+            if (currentAlignedMeshInstance != null)
+            {
+                Debug.Log("[EasyAR] 销毁现有mesh实例");
+                Destroy(currentAlignedMeshInstance);
+            }
+
+            // 实例化mesh
+            currentAlignedMeshInstance = Instantiate(denseMeshPrefab);
+            currentAlignedMeshInstance.name = "AlignedMesh_" + denseMeshPrefab.name;
+
+            // 挂载到地图控制器下
+            if (currentMapSession != null && currentMapSession.Maps.Count > 0)
+            {
+                var mapData = currentMapSession.Maps[0];
+                currentAlignedMeshInstance.transform.SetParent(mapData.Controller.transform, false);
+            }
+
+            // 设置初始位置（如果有保存的变换则使用，否则放在屏幕中心）
+            if (savedMeshTransform != null)
+            {
+                Debug.Log($"[EasyAR] 使用保存的mesh变换 - pos: {savedMeshTransform.position}, rot: {savedMeshTransform.rotation.eulerAngles}, scale: {savedMeshTransform.scale}");
+                currentAlignedMeshInstance.transform.localPosition = savedMeshTransform.position;
+                currentAlignedMeshInstance.transform.localRotation = savedMeshTransform.rotation;
+                currentAlignedMeshInstance.transform.localScale = savedMeshTransform.scale;
+                Debug.Log($"[EasyAR] Mesh变换已应用 - localPos: {currentAlignedMeshInstance.transform.localPosition}, localRot: {currentAlignedMeshInstance.transform.localRotation.eulerAngles}, localScale: {currentAlignedMeshInstance.transform.localScale}");
+            }
+            else
+            {
+                Debug.Log("[EasyAR] ⚠️ savedMeshTransform为null，使用默认位置");
+                // 放在相机前方3米处
+                if (arCamera != null)
+                {
+                    Vector3 spawnPos = arCamera.transform.position + arCamera.transform.forward * 3f;
+                    currentAlignedMeshInstance.transform.position = spawnPos;
+                    currentAlignedMeshInstance.transform.rotation = Quaternion.identity;
+                    currentAlignedMeshInstance.transform.localScale = Vector3.one;
+                    Debug.Log($"[EasyAR] 在相机前方生成mesh: {spawnPos}");
+                }
+            }
+
+            // 确保mesh有碰撞体（用于射线检测）
+            if (currentAlignedMeshInstance.GetComponent<Collider>() == null)
+            {
+                var meshCollider = currentAlignedMeshInstance.AddComponent<MeshCollider>();
+                meshCollider.convex = false;
+                Debug.Log("[EasyAR] 为mesh添加MeshCollider");
+            }
+
+            // 显示mesh
+            currentAlignedMeshInstance.SetActive(true);
+
+            // 进入对齐模式
+            isMeshAlignmentMode = true;
+
+            // 启用TouchController（将mesh作为可操作对象）
+            if (touchController != null && arCamera != null)
+            {
+                StartCoroutine(EnableMeshTouchControllerNextFrame());
+            }
+
+            Debug.Log("[EasyAR] Mesh对齐模式已启动");
+        }
+
+        /// <summary>
+        /// 延迟启用mesh的TouchController
+        /// </summary>
+        private System.Collections.IEnumerator EnableMeshTouchControllerNextFrame()
+        {
+            yield return null;
+
+            if (touchController != null && arCamera != null && currentAlignedMeshInstance != null)
+            {
+                touchController.TurnOn(
+                    currentAlignedMeshInstance.transform,
+                    arCamera,
+                    true,  // 单指拖动
+                    true,  // 双指移动
+                    true,  // 双指缩放
+                    true,  // 双指旋转
+                    false, // 不启用向下投影
+                    null   // 无投影回调
+                );
+                Debug.Log("[EasyAR] 启用mesh TouchController");
+            }
+        }
+
+        /// <summary>
+        /// 完成Mesh对齐（保存）
+        /// </summary>
+        public void FinalizeMeshAlignment()
+        {
+            if (!isMeshAlignmentMode)
+            {
+                Debug.LogWarning("[EasyAR] 当前不在mesh对齐模式");
+                return;
+            }
+
+            if (currentAlignedMeshInstance == null)
+            {
+                Debug.LogWarning("[EasyAR] mesh实例不存在");
+                return;
+            }
+
+            Debug.Log("[EasyAR] 完成Mesh对齐");
+
+            // 保存变换信息
+            Debug.Log($"[EasyAR] 当前mesh transform - localPos: {currentAlignedMeshInstance.transform.localPosition}, localRot: {currentAlignedMeshInstance.transform.localRotation.eulerAngles}, localScale: {currentAlignedMeshInstance.transform.localScale}");
+            savedMeshTransform = new SavedMeshTransform(currentAlignedMeshInstance.transform);
+            Debug.Log($"[EasyAR] 已保存mesh变换到savedMeshTransform: pos={savedMeshTransform.position}, rot={savedMeshTransform.rotation.eulerAngles}, scale={savedMeshTransform.scale}");
+
+            // 隐藏mesh
+            currentAlignedMeshInstance.SetActive(false);
+
+            // 关闭TouchController
+            if (touchController != null)
+            {
+                touchController.TurnOff();
+            }
+
+            // 退出对齐模式
+            isMeshAlignmentMode = false;
+
+            // 自动保存到MapMeta
+            SaveObjectsInfo();
+
+            Debug.Log("[EasyAR] Mesh对齐已保存并隐藏");
+        }
+
+        /// <summary>
+        /// 取消Mesh对齐（不保存）
+        /// </summary>
+        public void CancelMeshAlignment()
+        {
+            if (!isMeshAlignmentMode)
+            {
+                Debug.LogWarning("[EasyAR] 当前不在mesh对齐模式");
+                return;
+            }
+
+            Debug.Log("[EasyAR] 取消Mesh对齐");
+
+            // 关闭TouchController
+            if (touchController != null)
+            {
+                touchController.TurnOff();
+            }
+
+            // 销毁mesh实例（不保存）
+            if (currentAlignedMeshInstance != null)
+            {
+                Destroy(currentAlignedMeshInstance);
+                currentAlignedMeshInstance = null;
+            }
+
+            // 如果有之前保存的变换，恢复实例但保持隐藏
+            if (savedMeshTransform != null && denseMeshPrefab != null && currentMapSession != null && currentMapSession.Maps.Count > 0)
+            {
+                currentAlignedMeshInstance = Instantiate(denseMeshPrefab);
+                currentAlignedMeshInstance.name = "AlignedMesh_" + denseMeshPrefab.name;
+                currentAlignedMeshInstance.transform.SetParent(currentMapSession.Maps[0].Controller.transform, false);
+                currentAlignedMeshInstance.transform.localPosition = savedMeshTransform.position;
+                currentAlignedMeshInstance.transform.localRotation = savedMeshTransform.rotation;
+                currentAlignedMeshInstance.transform.localScale = savedMeshTransform.scale;
+
+                // 确保有碰撞体
+                if (currentAlignedMeshInstance.GetComponent<Collider>() == null)
+                {
+                    var meshCollider = currentAlignedMeshInstance.AddComponent<MeshCollider>();
+                    meshCollider.convex = false;
+                }
+
+                currentAlignedMeshInstance.SetActive(false);
+                Debug.Log("[EasyAR] 恢复之前保存的mesh变换（隐藏状态）");
+            }
+
+            // 退出对齐模式
+            isMeshAlignmentMode = false;
+
+            Debug.Log("[EasyAR] Mesh对齐已取消");
+        }
+
+        /// <summary>
+        /// 退出Mesh对齐模式（cleanup）
+        /// </summary>
+        public void ExitMeshAlignmentMode()
+        {
+            if (!isMeshAlignmentMode)
+            {
+                return;
+            }
+
+            Debug.Log("[EasyAR] 退出Mesh对齐模式");
+
+            // 隐藏mesh
+            if (currentAlignedMeshInstance != null)
+            {
+                currentAlignedMeshInstance.SetActive(false);
+            }
+
+            // 关闭TouchController
+            if (touchController != null)
+            {
+                touchController.TurnOff();
+            }
+
+            isMeshAlignmentMode = false;
+        }
+
+        #endregion
     }
 }

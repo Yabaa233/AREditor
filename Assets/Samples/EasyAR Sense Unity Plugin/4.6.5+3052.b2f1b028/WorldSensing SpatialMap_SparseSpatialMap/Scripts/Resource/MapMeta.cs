@@ -17,6 +17,7 @@ namespace SpatialMap_SparseSpatialMap
     {
         public SparseSpatialMapController.MapManagerSourceData Map = new SparseSpatialMapController.MapManagerSourceData();
         public List<PropInfo> Props = new List<PropInfo>();
+        public MeshAlignmentInfo MeshAlignment = null; // Mesh对齐信息（可选）
 
         public MapMeta(SparseSpatialMapController.SparseSpatialMapInfo map, List<PropInfo> props)
         {
@@ -53,5 +54,17 @@ namespace SpatialMap_SparseSpatialMap
 
         public enum TriggerType { OnEnter, OnExit }
         public enum ActionType { Win, Lose, Enable, Disable }
+
+        [Serializable]
+        /// <summary>
+        /// Mesh对齐信息（用于混合定位系统）
+        /// </summary>
+        public class MeshAlignmentInfo
+        {
+            public string MeshPrefabName = string.Empty; // Mesh预制体名称
+            public float[] Position = new float[3];      // 本地位置
+            public float[] Rotation = new float[4];      // 本地旋转（四元数）
+            public float[] Scale = new float[3];         // 本地缩放
+        }
     }
 }

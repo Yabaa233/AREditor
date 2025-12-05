@@ -15,6 +15,7 @@ public class EasyARUIManager : singleton<EasyARUIManager>
     public GameObject ObjectInspectorPanel;
     public GameObject CreateARMapPanel;
     public GameObject PlayPanel;
+    public GameObject MeshAlignmentPanel; // Mesh对齐配置面板
 
     [Header("AR Map List")]
     public GameObject ARMapListItem;
@@ -282,4 +283,76 @@ public class EasyARUIManager : singleton<EasyARUIManager>
         OpenParentSidePanel();
 
     }
+
+    #region Mesh Alignment UI Methods
+
+    /// <summary>
+    /// 打开Mesh配置面板并开始对齐模式
+    /// </summary>
+    public void OpenMeshAlignmentPanel()
+    {
+        if (!EasyARSpatialMapEditorManager.Instance.IsMapLocalized)
+        {
+            Debug.LogWarning("[EasyAR UI] 地图未本地化，无法配置Mesh");
+            return;
+        }
+
+        if (EasyARSpatialMapEditorManager.Instance.denseMeshPrefab == null)
+        {
+            Debug.LogWarning("[EasyAR UI] denseMeshPrefab未指定，无法配置Mesh");
+            return;
+        }
+
+        // 按照OnAddARMap的逻辑：先关闭父面板 -> 打开目标面板 -> 启动功能
+        CloseParentSidePanel();
+        MeshAlignmentPanel.SetActive(true);
+
+        EasyARSpatialMapEditorManager.Instance.StartMeshAlignment();
+    }
+
+    /// <summary>
+    /// 关闭Mesh配置面板（不保存）
+    /// </summary>
+    public void CloseMeshAlignmentPanel()
+    {
+        if (MeshAlignmentPanel != null)
+        {
+            MeshAlignmentPanel.SetActive(false);
+        }
+
+        // 恢复主面板
+        OpenParentSidePanel();
+
+        Debug.Log("[EasyAR UI] 已关闭Mesh配置面板");
+    }
+
+    /// <summary>
+    /// 确认Mesh对齐（保存）
+    /// </summary>
+    public void OnConfirmMeshAlignment()
+    {
+        Debug.Log("[EasyAR UI] 确认Mesh对齐");
+
+        // 完成对齐并保存
+        EasyARSpatialMapEditorManager.Instance.FinalizeMeshAlignment();
+
+        // 关闭面板
+        CloseMeshAlignmentPanel();
+    }
+
+    /// <summary>
+    /// 取消Mesh对齐（不保存）
+    /// </summary>
+    public void OnCancelMeshAlignment()
+    {
+        Debug.Log("[EasyAR UI] 取消Mesh对齐");
+
+        // 取消对齐
+        EasyARSpatialMapEditorManager.Instance.CancelMeshAlignment();
+
+        // 关闭面板
+        CloseMeshAlignmentPanel();
+    }
+
+    #endregion
 }
