@@ -128,13 +128,17 @@ public class TopDownCameraControllerUpdate : MonoBehaviour, IPointerEnterHandler
         // =================== 移动设备 (触摸操作) ===================
         void HandleTouchInput()
         {
+            // 如果有物体正在被拖拽，则不处理单指平移
+            bool isObjectBeingDragged = PlacedObjectUIMarker.IsAnyMarkerDragging;
+
             switch (Input.touchCount)
             {
                 case 0:
                     currentState = CameraControlState.Idle;
                     break;
                 case 1:
-                    HandlePanTouch();
+                    if (!isObjectBeingDragged)
+                        HandlePanTouch();
                     break;
                 case 2:
                     HandleZoomRotateTouch();

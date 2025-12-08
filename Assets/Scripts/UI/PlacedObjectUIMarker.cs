@@ -12,6 +12,9 @@ public class PlacedObjectUIMarker : MonoBehaviour, IPointerDownHandler, IPointer
     public GameObject focusedIcon;
     private bool isDragging = false;
 
+    // 静态属性，用于通知相机控制器当前是否有物体正在被拖拽
+    public static bool IsAnyMarkerDragging { get; private set; } = false;
+
     public void SetParent(GameObject parentObject)
     {
         ParentObject = parentObject;
@@ -34,6 +37,7 @@ public class PlacedObjectUIMarker : MonoBehaviour, IPointerDownHandler, IPointer
         if (eventData.button == PointerEventData.InputButton.Left)
         {
             isDragging = true;
+            IsAnyMarkerDragging = true;
             Focus(); // 设置 focus
         }
     }
@@ -43,6 +47,7 @@ public class PlacedObjectUIMarker : MonoBehaviour, IPointerDownHandler, IPointer
         if (eventData.button == PointerEventData.InputButton.Left)
         {
             isDragging = false;
+            IsAnyMarkerDragging = false;
         }
     }
 
