@@ -28,6 +28,7 @@ namespace Assets.Scripts.Manager
 
         [Header("Mesh Alignment")]
         public GameObject denseMeshPrefab; // 精细mesh预制体（在Inspector中指定）
+        public bool showMeshInEditMode = false; // 编辑模式下是否显示mesh（物理碰撞始终存在）
         private bool isMeshAlignmentMode = false; // 是否处于mesh对齐模式
         private GameObject currentAlignedMeshInstance; // 当前实例化的mesh对象
         private SavedMeshTransform savedMeshTransform; // 保存的mesh变换信息
@@ -150,13 +151,26 @@ namespace Assets.Scripts.Manager
                 UpdateColliderDebugVisualization();
             }
 
-            // 确保mesh可见性符合当前状态
+            // 确保mesh可见性符合当前状态（使用Renderer控制视觉，保持物理碰撞）
             if (currentAlignedMeshInstance != null)
             {
-                bool shouldBeVisible = isMeshAlignmentMode;
-                if (currentAlignedMeshInstance.activeSelf != shouldBeVisible)
+                // 对齐模式下一定可见，编辑模式下根据showMeshInEditMode控制
+                bool shouldBeVisuallyVisible = isMeshAlignmentMode || (isEditMode && showMeshInEditMode);
+
+                // 控制所有Renderer的可见性
+                Renderer[] renderers = currentAlignedMeshInstance.GetComponentsInChildren<Renderer>();
+                foreach (var renderer in renderers)
                 {
-                    currentAlignedMeshInstance.SetActive(shouldBeVisible);
+                    if (renderer.enabled != shouldBeVisuallyVisible)
+                    {
+                        renderer.enabled = shouldBeVisuallyVisible;
+                    }
+                }
+
+                // GameObject始终保持激活状态以保证碰撞体工作
+                if (!currentAlignedMeshInstance.activeSelf)
+                {
+                    currentAlignedMeshInstance.SetActive(true);
                 }
             }
         }
@@ -428,7 +442,9 @@ namespace Assets.Scripts.Manager
             // 再次检查相机状态
             if (touchController != null && arCamera != null && arCamera.isActiveAndEnabled && obj != null)
             {
-                // 启用向下投影功能，使物体贴合地面/桌面
+                // 只有配置了mesh才启用向下投影功能
+                bool enableProjection = (currentAlignedMeshInstance != null && savedMeshTransform != null);
+
                 touchController.TurnOn(
                     obj.transform,
                     arCamera,
@@ -436,10 +452,10 @@ namespace Assets.Scripts.Manager
                     true,  // 双指移动
                     true,  // 双指缩放
                     true,  // 双指旋转
-                    false,  // 启用向下投影
-                    GroundProjectionRaycast // 投影回调
+                    false,  // 只有mesh配置后才启用投影
+                    enableProjection ? GroundProjectionRaycast : null // 只有启用投影时才传回调
                 );
-                Debug.Log($"[EasyAR] 选中对象: {obj.name} (启用地面投影)");
+                Debug.Log($"[EasyAR] 选中对象: {obj.name} (投影: {(enableProjection ? "启用" : "禁用")})");
             }
         }
 
@@ -788,6 +804,7 @@ namespace Assets.Scripts.Manager
 
         /// <summary>
         /// 向下投影射线检测 - 优先检测mesh，fallback到点云
+        /// fromPosition: TouchController传入的目标位置（世界坐标）
         /// </summary>
         private easyar.Optional<Vector3> GroundProjectionRaycast(Vector3 fromPosition)
         {
@@ -796,14 +813,14 @@ namespace Assets.Scripts.Manager
                 return new easyar.Optional<Vector3>();
             }
 
-            // 从给定位置向下发射射线
-            Vector3 rayOrigin = fromPosition;
-            Vector3 rayDirection = Vector3.down;
-            float maxDistance = 10f; // 最大检测距离
-
-            // 优先检测mesh（如果mesh存在且可见）
-            if (currentAlignedMeshInstance != null && currentAlignedMeshInstance.activeSelf)
+            // 优先检测mesh（如果mesh存在且已配置）
+            if (currentAlignedMeshInstance != null && savedMeshTransform != null)
             {
+                // 从fromPosition上方2米向下射线，保持XZ坐标
+                Vector3 rayOrigin = new Vector3(fromPosition.x, fromPosition.y + 2f, fromPosition.z);
+                Vector3 rayDirection = Vector3.down;
+                float maxDistance = 10f; // 向下检测10米
+
                 RaycastHit meshHit;
                 if (Physics.Raycast(rayOrigin, rayDirection, out meshHit, maxDistance))
                 {
@@ -811,22 +828,23 @@ namespace Assets.Scripts.Manager
                     if (meshHit.collider.gameObject == currentAlignedMeshInstance ||
                         meshHit.collider.transform.IsChildOf(currentAlignedMeshInstance.transform))
                     {
-                        Debug.Log($"[EasyAR] Mesh投影成功: {meshHit.point}, 距离: {meshHit.distance:F3}m");
-                        return easyar.Optional<Vector3>.CreateSome(meshHit.point);
+                        // meshHit.point是世界坐标，直接返回（物体和mesh都在同一个MapController下）
+                        Vector3 worldPoint = meshHit.point;
+                        float yDiff = worldPoint.y - fromPosition.y;
+
+                        if (Mathf.Abs(yDiff) > 0.01f)
+                        {
+                            string arrow = yDiff > 0 ? "↑" : "↓";
+                            string color = yDiff > 0 ? "yellow" : "cyan";
+                            Debug.Log($"<color={color}>[Mesh投影] {arrow} {Mathf.Abs(yDiff):F3}m: Y {fromPosition.y:F3} → {worldPoint.y:F3}</color>");
+                        }
+
+                        return easyar.Optional<Vector3>.CreateSome(worldPoint);
                     }
                 }
             }
 
-            // Fallback: 使用 Physics.Raycast 检测其他碰撞体
-            RaycastHit hit;
-            if (Physics.Raycast(rayOrigin, rayDirection, out hit, maxDistance))
-            {
-                // 找到了碰撞点，返回该位置
-                Debug.Log($"[EasyAR] 向下投影成功（非mesh）: {hit.point}, 距离: {hit.distance:F3}m");
-                return easyar.Optional<Vector3>.CreateSome(hit.point);
-            }
-
-            // 如果 Physics.Raycast 没有找到，尝试使用屏幕空间投影到点云
+            // Fallback到点云检测
             if (arCamera != null)
             {
                 Vector3 screenPos = arCamera.WorldToScreenPoint(fromPosition);
@@ -835,12 +853,12 @@ namespace Assets.Scripts.Manager
 
                 if (hitResult.OnSome)
                 {
-                    Debug.Log($"[EasyAR] 点云投影成功: {hitResult.Value}");
+                    Debug.Log($"<color=magenta>[点云投影] Y {fromPosition.y:F3} → {hitResult.Value.y:F3}</color>");
                     return hitResult;
                 }
             }
 
-            Debug.Log($"[EasyAR] 向下投影失败，保持原位置");
+            // 所有投影都失败，返回空（TouchController会保持原位置）
             return new easyar.Optional<Vector3>();
         }
 
@@ -924,7 +942,7 @@ namespace Assets.Scripts.Manager
                     Rotation = new float[4] { savedMeshTransform.rotation.x, savedMeshTransform.rotation.y, savedMeshTransform.rotation.z, savedMeshTransform.rotation.w },
                     Scale = new float[3] { savedMeshTransform.scale.x, savedMeshTransform.scale.y, savedMeshTransform.scale.z }
                 };
-                Debug.Log($"[EasyAR] 保存mesh对齐信息到MapMeta - Prefab: {denseMeshPrefab.name}, Pos: [{savedMeshTransform.position.x}, {savedMeshTransform.position.y}, {savedMeshTransform.position.z}], Rot: [{savedMeshTransform.rotation.x}, {savedMeshTransform.rotation.y}, {savedMeshTransform.rotation.z}, {savedMeshTransform.rotation.w}], Scale: [{savedMeshTransform.scale.x}, {savedMeshTransform.scale.y}, {savedMeshTransform.scale.z}]");
+                // Debug.Log($"[EasyAR] 保存mesh对齐信息到MapMeta - Prefab: {denseMeshPrefab.name}, Pos: [{savedMeshTransform.position.x}, {savedMeshTransform.position.y}, {savedMeshTransform.position.z}], Rot: [{savedMeshTransform.rotation.x}, {savedMeshTransform.rotation.y}, {savedMeshTransform.rotation.z}, {savedMeshTransform.rotation.w}], Scale: [{savedMeshTransform.scale.x}, {savedMeshTransform.scale.y}, {savedMeshTransform.scale.z}]");
             }
             else
             {
@@ -969,10 +987,10 @@ namespace Assets.Scripts.Manager
             isEditMode = true;
             Debug.Log("[EasyAR Spatial Map Editor] 进入编辑模式");
 
-            // 确保mesh在编辑模式下隐藏
+            // 确保mesh在编辑模式下根据showMeshInEditMode控制可见性
             if (currentAlignedMeshInstance != null && !isMeshAlignmentMode)
             {
-                currentAlignedMeshInstance.SetActive(false);
+                SetMeshVisualVisibility(showMeshInEditMode);
             }
 
             // 通知AR事件系统更新连接线显示
@@ -1042,10 +1060,10 @@ namespace Assets.Scripts.Manager
             isPlayMode = true;
             Debug.Log("[EasyAR Spatial Map Editor] 进入播放模式");
 
-            // 确保mesh在播放模式下隐藏
+            // 确保mesh在播放模式下视觉隐藏
             if (currentAlignedMeshInstance != null)
             {
-                currentAlignedMeshInstance.SetActive(false);
+                SetMeshVisualVisibility(false);
             }
 
             // 1. 为所有AR对象生成事件逻辑
@@ -1098,10 +1116,10 @@ namespace Assets.Scripts.Manager
             // 4. 恢复点云显示
             ShowPointCloud();
 
-            // 4.5. 确保mesh在退出播放模式后仍然隐藏
+            // 4.5. 确保mesh在退出播放模式后仍然视觉隐藏
             if (currentAlignedMeshInstance != null)
             {
-                currentAlignedMeshInstance.SetActive(false);
+                SetMeshVisualVisibility(false);
             }
 
             // 5. 清理碰撞体调试可视化
@@ -2116,8 +2134,8 @@ namespace Assets.Scripts.Manager
                         Debug.Log("[EasyAR] 为恢复的mesh添加MeshCollider");
                     }
 
-                    // 立即隐藏mesh（仅在对齐模式下可见）
-                    currentAlignedMeshInstance.SetActive(false);
+                    // 立即视觉隐藏mesh（仅在对齐模式下可见）
+                    SetMeshVisualVisibility(false);
 
                     Debug.Log("[EasyAR Spatial Map Editor] Mesh恢复完成并隐藏");
                 }
@@ -2486,6 +2504,26 @@ namespace Assets.Scripts.Manager
         #region Mesh Alignment Methods
 
         /// <summary>
+        /// 设置mesh的视觉可见性（使用Renderer控制，保持物理碰撞）
+        /// </summary>
+        private void SetMeshVisualVisibility(bool visible)
+        {
+            if (currentAlignedMeshInstance == null) return;
+
+            Renderer[] renderers = currentAlignedMeshInstance.GetComponentsInChildren<Renderer>();
+            foreach (var renderer in renderers)
+            {
+                renderer.enabled = visible;
+            }
+
+            // 确保GameObject始终激活以保证Collider工作
+            if (!currentAlignedMeshInstance.activeSelf)
+            {
+                currentAlignedMeshInstance.SetActive(true);
+            }
+        }
+
+        /// <summary>
         /// 开始Mesh对齐模式
         /// </summary>
         public void StartMeshAlignment()
@@ -2625,8 +2663,8 @@ namespace Assets.Scripts.Manager
             savedMeshTransform = new SavedMeshTransform(currentAlignedMeshInstance.transform);
             Debug.Log($"[EasyAR] 已保存mesh变换到savedMeshTransform: pos={savedMeshTransform.position}, rot={savedMeshTransform.rotation.eulerAngles}, scale={savedMeshTransform.scale}");
 
-            // 隐藏mesh
-            currentAlignedMeshInstance.SetActive(false);
+            // 视觉隐藏mesh（保持物理碰撞）
+            SetMeshVisualVisibility(false);
 
             // 关闭TouchController
             if (touchController != null)
@@ -2686,8 +2724,8 @@ namespace Assets.Scripts.Manager
                     meshCollider.convex = false;
                 }
 
-                currentAlignedMeshInstance.SetActive(false);
-                Debug.Log("[EasyAR] 恢复之前保存的mesh变换（隐藏状态）");
+                SetMeshVisualVisibility(false);
+                Debug.Log("[EasyAR] 恢复之前保存的mesh变换（视觉隐藏，物理存在）");
             }
 
             // 退出对齐模式
@@ -2708,10 +2746,10 @@ namespace Assets.Scripts.Manager
 
             Debug.Log("[EasyAR] 退出Mesh对齐模式");
 
-            // 隐藏mesh
+            // 视觉隐藏mesh（保持物理碰撞）
             if (currentAlignedMeshInstance != null)
             {
-                currentAlignedMeshInstance.SetActive(false);
+                SetMeshVisualVisibility(false);
             }
 
             // 关闭TouchController

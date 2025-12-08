@@ -5510,7 +5510,8 @@ MonoBehaviour:
   showPointCloud: 1
   autoSaveOnEdit: 1
   showColliderDebug: 0
-  denseMeshPrefab: {fileID: 1486679525479246811, guid: d67a6fcce060f5842ab6a82f29ee7f6c, type: 3}
+  denseMeshPrefab: {fileID: 7138284100322932080, guid: e55921f762d6523459a0ed7f962de68b, type: 3}
+  showMeshInEditMode: 1
   isMapLocalized: 0
   currentSelectedObject: {fileID: 0}
   EasyARSession: {fileID: 844033004}
