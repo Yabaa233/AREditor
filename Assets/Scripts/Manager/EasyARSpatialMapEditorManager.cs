@@ -2465,9 +2465,6 @@ namespace Assets.Scripts.Manager
         {
             if (obj == null) return;
 
-            // 设置对象位置
-            obj.transform.position = position;
-
             // 确保对象有 ARPlacedObject 组件
             var arPlacedObject = obj.GetComponent<ARPlacedObject>();
             if (arPlacedObject == null)
@@ -2475,30 +2472,28 @@ namespace Assets.Scripts.Manager
                 arPlacedObject = obj.AddComponent<ARPlacedObject>();
             }
 
-            // 设置对象的唯一ID（如果ARPlacedObject有这个字段）
-            // arPlacedObject.objectID = System.Guid.NewGuid().ToString();
-
-            // 将对象挂载到地图控制器下
+            // 将对象挂载到地图控制器下，使用与PlaceGameObjectOnMap一致的方式
             if (currentMapSession?.Maps?.Count > 0)
             {
                 var mapController = currentMapSession.Maps[0].Controller;
                 if (mapController != null)
                 {
-                    obj.transform.SetParent(mapController.transform);
+                    // 使用InverseTransformPoint计算正确的本地坐标（与PlaceGameObjectOnMap一致）
+                    obj.transform.SetParent(mapController.transform, worldPositionStays: false);
+                    obj.transform.localPosition = mapController.transform.InverseTransformPoint(position);
                 }
+            }
+            else
+            {
+                // 如果没有地图会话，直接设置世界坐标
+                obj.transform.position = position;
             }
 
             // 触发对象放置事件
             OnObjectPlaced?.Invoke(obj);
 
-            Debug.Log($"[EasyAR] 注册放置对象: {obj.name} 在位置: {position}");
+            Debug.Log($"[EasyAR] 注册放置对象: {obj.name} 在位置: {position}, 本地位置: {obj.transform.localPosition}");
 
-            // // 如果开启了自动保存，保存地图
-            // if (autoSaveOnEdit)
-            // {
-            //     SaveCurrentMap();
-            //     SaveObjectsInfo();
-            // }
             RegisterObject(obj);
         }
 
@@ -2578,6 +2573,26 @@ namespace Assets.Scripts.Manager
             var mapController = mapData.Controller;
             int loadedCount = 0;
 
+            // 验证mesh的父节点是否正确
+            if (currentAlignedMeshInstance.transform.parent != mapController.transform)
+            {
+                Debug.LogError($"[EasyAR] 严重错误：mesh的父节点({currentAlignedMeshInstance.transform.parent?.name})不是当前MapController({mapController.name})！");
+                Debug.Log($"[EasyAR] 尝试修正：将mesh重新挂载到正确的MapController下");
+
+                // 保存当前的本地变换
+                Vector3 savedLocalPos = currentAlignedMeshInstance.transform.localPosition;
+                Quaternion savedLocalRot = currentAlignedMeshInstance.transform.localRotation;
+                Vector3 savedLocalScale = currentAlignedMeshInstance.transform.localScale;
+
+                // 重新挂载到正确的Controller
+                currentAlignedMeshInstance.transform.SetParent(mapController.transform, false);
+                currentAlignedMeshInstance.transform.localPosition = savedLocalPos;
+                currentAlignedMeshInstance.transform.localRotation = savedLocalRot;
+                currentAlignedMeshInstance.transform.localScale = savedLocalScale;
+            }
+
+            Debug.Log($"[EasyAR] MapController: {mapController.name}, 位置: {mapController.transform.position}, mesh parent: {currentAlignedMeshInstance.transform.parent?.name}");
+
             // 查找带有LevelParent tag的子物体（这是2D编辑器中物体实际挂载的父节点）
             Transform levelParent = null;
             foreach (Transform child in currentAlignedMeshInstance.GetComponentsInChildren<Transform>(true))
@@ -2616,21 +2631,25 @@ namespace Assets.Scripts.Manager
 
                     Debug.Log($"[EasyAR] 加载物体 {obj.name} - JSON坐标: pos={data.position}, rot={data.rotation}, scale={data.scale}");
 
-                    // Step 1: 先将物体设为LevelParent的子物体，应用存储的local坐标
+                    // 【关键】完全按照PlaceGameObjectOnMap的锚定方式：
+                    // Step 1: 先临时将物体挂到LevelParent下，用JSON数据设置本地坐标，计算出世界坐标
                     obj.transform.SetParent(levelParent, worldPositionStays: false);
                     obj.transform.localPosition = data.position;
                     obj.transform.localRotation = Quaternion.Euler(data.rotation);
                     obj.transform.localScale = data.scale;
 
-                    Debug.Log($"[EasyAR] Step1后（作为LevelParent子物体）- 本地位置: {obj.transform.localPosition}, 世界位置: {obj.transform.position}");
+                    // 记录此时的世界坐标（这是物体在AR世界中应该出现的位置）
+                    Vector3 worldPosition = obj.transform.position;
 
-                    // Step 2: 转换到MapController下（保持世界坐标不变）
-                    obj.transform.SetParent(mapController.transform, worldPositionStays: true);
+                    Debug.Log($"[EasyAR] Step1: 临时挂到LevelParent - 本地坐标: {data.position}, 计算出世界坐标: {worldPosition}");
 
-                    Debug.Log($"[EasyAR] Step2后（转到MapController）- 本地位置: {obj.transform.localPosition}, 世界位置: {obj.transform.position}");
+                    // Step 2: 【关键】按照PlaceGameObjectOnMap的方式锚定到AR空间
+                    // 先设置父节点为MapController
+                    obj.transform.parent = mapController.transform;
+                    // 再使用InverseTransformPoint将世界坐标转换为MapController的本地坐标
+                    obj.transform.localPosition = mapController.transform.InverseTransformPoint(worldPosition);
 
-                    // Step 3: 重置scale为Vector3.one
-                    obj.transform.localScale = Vector3.one;
+                    Debug.Log($"[EasyAR] Step2: 锚定到AR空间 - MapController本地坐标: {obj.transform.localPosition}, 验证世界坐标: {obj.transform.position}");
 
                     // 确保有ARPlacedObject组件
                     var arPlacedObject = obj.GetComponent<ARPlacedObject>();
@@ -2827,20 +2846,26 @@ namespace Assets.Scripts.Manager
                 Destroy(currentAlignedMeshInstance);
             }
 
+            // 确保有地图会话
+            if (currentMapSession == null || currentMapSession.Maps.Count == 0)
+            {
+                Debug.LogError("[EasyAR] 无法开始mesh对齐：没有地图会话");
+                return;
+            }
+
+            var mapController = currentMapSession.Maps[0].Controller;
+
             // 实例化mesh
             currentAlignedMeshInstance = Instantiate(denseMeshPrefab);
             currentAlignedMeshInstance.name = "AlignedMesh_" + denseMeshPrefab.name;
 
-            // 挂载到地图控制器下
-            if (currentMapSession != null && currentMapSession.Maps.Count > 0)
-            {
-                var mapData = currentMapSession.Maps[0];
-                currentAlignedMeshInstance.transform.SetParent(mapData.Controller.transform, false);
-            }
+            // 【关键】按照PlaceGameObjectOnMap的方式：先设置父节点
+            currentAlignedMeshInstance.transform.parent = mapController.transform;
 
             // 设置初始位置（如果有保存的变换则使用，否则放在屏幕中心）
             if (savedMeshTransform != null)
             {
+                // 直接使用保存的本地坐标（已经是正确的本地坐标）
                 Debug.Log($"[EasyAR] 使用保存的mesh变换 - pos: {savedMeshTransform.position}, rot: {savedMeshTransform.rotation.eulerAngles}, scale: {savedMeshTransform.scale}");
                 currentAlignedMeshInstance.transform.localPosition = savedMeshTransform.position;
                 currentAlignedMeshInstance.transform.localRotation = savedMeshTransform.rotation;
@@ -2849,15 +2874,29 @@ namespace Assets.Scripts.Manager
             }
             else
             {
-                Debug.Log("[EasyAR] ⚠️ savedMeshTransform为null，使用默认位置");
-                // 放在相机前方3米处
-                if (arCamera != null)
+                // 【关键】使用HitTestOne锚定mesh到稀疏点云
+                Debug.Log("[EasyAR] savedMeshTransform为null，使用屏幕中心HitTest锚定mesh");
+                Vector2 screenCenter = new Vector2(0.5f, 0.5f);
+                var hitResult = currentMapSession.HitTestOne(screenCenter);
+
+                if (hitResult.OnSome)
                 {
-                    Vector3 spawnPos = arCamera.transform.position + arCamera.transform.forward * 3f;
-                    currentAlignedMeshInstance.transform.position = spawnPos;
-                    currentAlignedMeshInstance.transform.rotation = Quaternion.identity;
-                    currentAlignedMeshInstance.transform.localScale = Vector3.one;
-                    Debug.Log($"[EasyAR] 在相机前方生成mesh: {spawnPos}");
+                    // 按照PlaceGameObjectOnMap的方式：使用InverseTransformPoint转换为本地坐标
+                    currentAlignedMeshInstance.transform.localPosition = mapController.transform.InverseTransformPoint(hitResult.Value);
+                    Debug.Log($"[EasyAR] Mesh已锚定到点云 - 世界坐标: {hitResult.Value}, 本地坐标: {currentAlignedMeshInstance.transform.localPosition}");
+                }
+                else
+                {
+                    Debug.LogWarning("[EasyAR] 屏幕中心未检测到点云，请将相机对准已扫描区域");
+
+                    // 清理已创建的mesh实例
+                    if (currentAlignedMeshInstance != null)
+                    {
+                        Destroy(currentAlignedMeshInstance);
+                        currentAlignedMeshInstance = null;
+                    }
+
+                    return;
                 }
             }
 
