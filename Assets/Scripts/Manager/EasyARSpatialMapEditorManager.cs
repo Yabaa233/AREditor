@@ -2743,6 +2743,23 @@ namespace Assets.Scripts.Manager
         }
 
         /// <summary>
+        /// 切换编辑模式下mesh的显示状态（供Toggle的OnValueChanged调用）
+        /// </summary>
+        /// <param name="isOn">Toggle的开关状态</param>
+        public void SetShowMeshInEditMode(bool isOn)
+        {
+            showMeshInEditMode = isOn;
+
+            // 如果在编辑模式下，立即更新mesh可见性
+            if (isEditMode && currentAlignedMeshInstance != null && !isMeshAlignmentMode)
+            {
+                SetMeshVisualVisibility(showMeshInEditMode);
+            }
+
+            Debug.Log($"[EasyAR] 编辑模式下mesh显示: {(showMeshInEditMode ? "开启" : "关闭")}");
+        }
+
+        /// <summary>
         /// 设置mesh的视觉可见性（使用Renderer控制，保持物理碰撞）
         /// </summary>
         public void SetMeshVisualVisibility(bool visible)
