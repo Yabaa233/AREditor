@@ -129,7 +129,7 @@ public class TopDownCameraControllerUpdate : MonoBehaviour, IPointerEnterHandler
         void HandleTouchInput()
         {
             // 如果有物体正在被拖拽，则不处理单指平移
-            bool isObjectBeingDragged = PlacedObjectUIMarker.IsAnyMarkerDragging;
+            bool isObjectBeingDragged = PlacedObjectUIMarker.IsAnyMarkerDragging || DragItemUI.IsDragging;
 
             switch (Input.touchCount)
             {

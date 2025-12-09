@@ -4,6 +4,8 @@ using UnityEngine.UI;
 
 public class DragItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
+    public static bool IsDragging { get; private set; } = false;
+
     private Canvas canvas;
     private RectTransform dragIcon;
     private Image iconImage;
@@ -29,6 +31,7 @@ public class DragItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDr
 
     public void OnBeginDrag(PointerEventData eventData)
     {
+        IsDragging = true;
         dragIcon = new GameObject("DragIcon").AddComponent<RectTransform>();
         dragIcon.SetParent(canvas.transform, false);
         dragIcon.sizeDelta = ((RectTransform)transform).sizeDelta;
@@ -50,6 +53,7 @@ public class DragItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDr
 
     public void OnEndDrag(PointerEventData eventData)
     {
+        IsDragging = false;
         if (dragIcon)
             Destroy(dragIcon.gameObject);
 
