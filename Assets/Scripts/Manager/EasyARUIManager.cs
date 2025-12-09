@@ -44,10 +44,33 @@ public class EasyARUIManager : singleton<EasyARUIManager>
     {
         TwoDMapSidePanel.SetActive(true);
         Update2DMapList();
+
+        // 显示mesh（如果地图已本地化且mesh已配置）
+        // if (EasyARSpatialMapEditorManager.Instance != null)
+        // {
+        //     Debug.Log($"[2D Map Panel] IsMapLocalized: {EasyARSpatialMapEditorManager.Instance.IsMapLocalized}");
+
+        //     if (EasyARSpatialMapEditorManager.Instance.IsMapLocalized)
+        //     {
+        //         EasyARSpatialMapEditorManager.Instance.ShowMesh(true);
+        //         Debug.Log("[2D Map Panel] 已调用ShowMesh(true)");
+        //     }
+        // }
+
+        EasyARSpatialMapEditorManager.Instance.SetMeshVisualVisibility(true);
     }
     public void Close2DMapSidePanel()
     {
         TwoDMapSidePanel.SetActive(false);
+
+        // 根据 showMeshInEditMode 设置决定是否隐藏mesh
+        // if (EasyARSpatialMapEditorManager.Instance != null)
+        // {
+        //     bool showMesh = EasyARSpatialMapEditorManager.Instance.showMeshInEditMode;
+        //     EasyARSpatialMapEditorManager.Instance.ShowMesh(showMesh);
+        // }
+        EasyARSpatialMapEditorManager.Instance.SetMeshVisualVisibility(false);
+
     }
     public void OpenARObjectListSidePanel()
     {

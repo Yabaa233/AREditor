@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using easyar;
 using SpatialMap_SparseSpatialMap;
@@ -2504,23 +2505,273 @@ namespace Assets.Scripts.Manager
         #region Mesh Alignment Methods
 
         /// <summary>
+        /// 公开方法：显示或隐藏mesh（供外部调用）
+        /// </summary>
+        public void ShowMesh(bool visible)
+        {
+            Debug.Log($"[EasyAR] ShowMesh({visible}) - currentAlignedMeshInstance: {(currentAlignedMeshInstance != null ? currentAlignedMeshInstance.name : "null")}");
+
+            if (currentAlignedMeshInstance == null)
+            {
+                Debug.LogWarning("[EasyAR] ShowMesh失败：currentAlignedMeshInstance为null，mesh可能未配置或未恢复");
+                return;
+            }
+
+            SetMeshVisualVisibility(visible);
+        }
+
+        /// <summary>
+        /// 从2D编辑器的JSON文件加载物体到mesh下，然后转换到稀疏点云空间
+        /// </summary>
+        /// <param name="fileName">JSON文件名</param>
+        /// <returns>是否加载成功</returns>
+        public bool LoadObjectsFromJsonToMesh(string fileName)
+        {
+            // 前置条件检查
+            if (!isMapLocalized)
+            {
+                Debug.LogWarning("[EasyAR] 地图未本地化，无法加载2D关卡数据");
+                return false;
+            }
+
+            if (currentAlignedMeshInstance == null)
+            {
+                Debug.LogWarning("[EasyAR] Mesh未配置，无法加载2D关卡数据。请先完成Mesh对齐配置。");
+                return false;
+            }
+
+            if (currentMapSession == null || currentMapSession.Maps.Count == 0)
+            {
+                Debug.LogWarning("[EasyAR] 当前没有有效的地图会话");
+                return false;
+            }
+
+            // 获取templateDB
+            var templateDB = EditorManager.Instance?.templateDB;
+            if (templateDB == null)
+            {
+                Debug.LogError("[EasyAR] 模板数据库未找到，无法加载物体");
+                return false;
+            }
+
+            // 读取JSON文件
+            string fullPath = System.IO.Path.Combine(Application.persistentDataPath, fileName);
+            if (!System.IO.File.Exists(fullPath))
+            {
+                Debug.LogError($"[EasyAR] 关卡文件不存在: {fullPath}");
+                return false;
+            }
+
+            string json = System.IO.File.ReadAllText(fullPath);
+            SceneSaveData sceneData = JsonUtility.FromJson<SceneSaveData>(json);
+
+            if (sceneData == null || sceneData.objects == null || sceneData.objects.Count == 0)
+            {
+                Debug.LogWarning($"[EasyAR] 关卡文件为空或无效: {fileName}");
+                return false;
+            }
+
+            // 清除已有AR物体
+            ClearAllObjects();
+
+            var mapData = currentMapSession.Maps[0];
+            var mapController = mapData.Controller;
+            int loadedCount = 0;
+
+            // 查找带有LevelParent tag的子物体（这是2D编辑器中物体实际挂载的父节点）
+            Transform levelParent = null;
+            foreach (Transform child in currentAlignedMeshInstance.GetComponentsInChildren<Transform>(true))
+            {
+                if (child.CompareTag("LevelParent"))
+                {
+                    levelParent = child;
+                    break;
+                }
+            }
+
+            if (levelParent == null)
+            {
+                Debug.LogWarning("[EasyAR] 未找到LevelParent子物体，使用mesh根节点作为父节点");
+                levelParent = currentAlignedMeshInstance.transform;
+            }
+
+            Debug.Log($"[EasyAR] 开始从JSON加载 {sceneData.objects.Count} 个物体到mesh下");
+            Debug.Log($"[EasyAR] LevelParent: {levelParent.name}, 世界位置: {levelParent.position}, 世界旋转: {levelParent.eulerAngles}");
+
+            foreach (var data in sceneData.objects)
+            {
+                try
+                {
+                    // 根据templateID查找模板
+                    var template = templateDB.GetTemplateByID(data.templateID);
+                    if (template == null || template.ARPrefab == null)
+                    {
+                        Debug.LogWarning($"[EasyAR] 找不到templateID为 {data.templateID} 的模板，跳过此物体");
+                        continue;
+                    }
+
+                    // 实例化ARPrefab
+                    GameObject obj = Instantiate(template.ARPrefab);
+                    obj.name = template.ARPrefab.name;
+
+                    Debug.Log($"[EasyAR] 加载物体 {obj.name} - JSON坐标: pos={data.position}, rot={data.rotation}, scale={data.scale}");
+
+                    // Step 1: 先将物体设为LevelParent的子物体，应用存储的local坐标
+                    obj.transform.SetParent(levelParent, worldPositionStays: false);
+                    obj.transform.localPosition = data.position;
+                    obj.transform.localRotation = Quaternion.Euler(data.rotation);
+                    obj.transform.localScale = data.scale;
+
+                    Debug.Log($"[EasyAR] Step1后（作为LevelParent子物体）- 本地位置: {obj.transform.localPosition}, 世界位置: {obj.transform.position}");
+
+                    // Step 2: 转换到MapController下（保持世界坐标不变）
+                    obj.transform.SetParent(mapController.transform, worldPositionStays: true);
+
+                    Debug.Log($"[EasyAR] Step2后（转到MapController）- 本地位置: {obj.transform.localPosition}, 世界位置: {obj.transform.position}");
+
+                    // Step 3: 重置scale为Vector3.one
+                    obj.transform.localScale = Vector3.one;
+
+                    // 确保有ARPlacedObject组件
+                    var arPlacedObject = obj.GetComponent<ARPlacedObject>();
+                    if (arPlacedObject == null)
+                    {
+                        arPlacedObject = obj.AddComponent<ARPlacedObject>();
+                    }
+
+                    // 确保有Collider组件
+                    if (obj.GetComponent<Collider>() == null)
+                    {
+                        obj.AddComponent<BoxCollider>();
+                    }
+
+                    // 从JSON恢复完整的runtimeData
+                    arPlacedObject.runtimeData = new PlacedObjectData
+                    {
+                        templateID = data.templateID,
+                        ID = string.IsNullOrEmpty(data.ID) ? EditorManager.Instance.GenerateUniqueID() : data.ID,
+                        ifHiddenAtGameStart = data.ifHiddenAtGameStart,
+                        position = obj.transform.localPosition, // 使用转换后的位置
+                        rotation = obj.transform.localEulerAngles,
+                        scale = obj.transform.localScale,
+                        events = data.events != null ? new List<TriggerActionEventData>(data.events) : new List<TriggerActionEventData>()
+                    };
+                    arPlacedObject.initialized = true;
+
+                    // 注册到地图会话
+                    mapData.Props.Add(obj);
+
+                    // 编辑模式下始终显示物体
+                    obj.SetActive(true);
+
+                    loadedCount++;
+                    Debug.Log($"[EasyAR] 加载物体: {obj.name}, ID: {arPlacedObject.runtimeData.ID}, 世界位置: {obj.transform.position}");
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.LogWarning($"[EasyAR] 加载物体失败: {ex.Message}");
+                }
+            }
+
+            Debug.Log($"[EasyAR] 从JSON加载完成，共加载 {loadedCount}/{sceneData.objects.Count} 个物体");
+
+            // 保存对象信息到MapMeta
+            if (autoSaveOnEdit)
+            {
+                SaveObjectsInfo();
+            }
+
+            // 通知AR事件系统更新
+            if (AREventSystemManager.Instance != null)
+            {
+                AREventSystemManager.Instance.OnModeChanged();
+            }
+
+            return loadedCount > 0;
+        }
+
+        /// <summary>
+        /// 自动加载最新的JSON关卡文件到mesh，然后转换到稀疏点云空间
+        /// </summary>
+        public void LoadLatestJsonToMesh()
+        {
+            // 前置条件检查
+            if (!isMapLocalized)
+            {
+                Debug.LogWarning("[EasyAR] 地图未本地化，无法加载2D关卡数据");
+                return;
+            }
+
+            if (currentAlignedMeshInstance == null)
+            {
+                Debug.LogWarning("[EasyAR] Mesh未配置，无法加载2D关卡数据");
+                return;
+            }
+
+            // 扫描JSON文件
+            string savePath = Application.persistentDataPath;
+            if (!System.IO.Directory.Exists(savePath))
+            {
+                Debug.LogWarning("[EasyAR] 保存路径不存在");
+                return;
+            }
+
+            string[] jsonFiles = System.IO.Directory.GetFiles(savePath, "*.json");
+            if (jsonFiles.Length == 0)
+            {
+                Debug.LogWarning("[EasyAR] 没有找到任何JSON关卡文件");
+                return;
+            }
+
+            // 按修改时间排序，获取最新文件
+            var latestFile = jsonFiles
+                .Select(f => new System.IO.FileInfo(f))
+                .OrderByDescending(f => f.LastWriteTime)
+                .FirstOrDefault();
+
+            if (latestFile == null)
+            {
+                Debug.LogWarning("[EasyAR] 无法获取最新的JSON文件");
+                return;
+            }
+
+            string fileName = latestFile.Name;
+            Debug.Log($"[EasyAR] 自动加载最新关卡: {fileName}, 修改时间: {latestFile.LastWriteTime}");
+
+            // 调用现有的加载方法
+            LoadObjectsFromJsonToMesh(fileName);
+        }
+
+        /// <summary>
         /// 设置mesh的视觉可见性（使用Renderer控制，保持物理碰撞）
         /// </summary>
-        private void SetMeshVisualVisibility(bool visible)
+        public void SetMeshVisualVisibility(bool visible)
         {
             if (currentAlignedMeshInstance == null) return;
 
-            Renderer[] renderers = currentAlignedMeshInstance.GetComponentsInChildren<Renderer>();
+            Debug.Log($"[EasyAR] SetMeshVisualVisibility({visible}) - mesh位置: {currentAlignedMeshInstance.transform.position}, 缩放: {currentAlignedMeshInstance.transform.lossyScale}, 激活状态: {currentAlignedMeshInstance.activeSelf}");
+
+            // 首先确保mesh及其所有子物体都是激活的
+            currentAlignedMeshInstance.SetActive(true);
+            foreach (Transform child in currentAlignedMeshInstance.GetComponentsInChildren<Transform>(true))
+            {
+                if (!child.gameObject.activeSelf)
+                {
+                    child.gameObject.SetActive(true);
+                    Debug.Log($"[EasyAR] 激活子物体: {child.name}");
+                }
+            }
+
+            Renderer[] renderers = currentAlignedMeshInstance.GetComponentsInChildren<Renderer>(true); // 包含非激活的子物体
+            Debug.Log($"[EasyAR] 找到 {renderers.Length} 个Renderer");
+
             foreach (var renderer in renderers)
             {
+                Debug.Log($"[EasyAR] Renderer: {renderer.gameObject.name}, 当前enabled: {renderer.enabled}, GameObject激活: {renderer.gameObject.activeInHierarchy}");
                 renderer.enabled = visible;
             }
 
-            // 确保GameObject始终激活以保证Collider工作
-            if (!currentAlignedMeshInstance.activeSelf)
-            {
-                currentAlignedMeshInstance.SetActive(true);
-            }
+            Debug.Log($"[EasyAR] SetMeshVisualVisibility完成，mesh应该{(visible ? "可见" : "隐藏")}");
         }
 
         /// <summary>
