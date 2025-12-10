@@ -425,6 +425,14 @@ namespace Assets.Scripts.Manager
             // 选择新对象
             currentSelectedObject = obj;
 
+            // 记录日志
+            if (currentMapSession != null && currentMapSession.Maps.Count > 0)
+            {
+                string mapId = currentMapSession.Maps[0]?.Meta?.Map?.ID ?? "";
+                string mapName = currentMapSession.Maps[0]?.Meta?.Map?.Name ?? "";
+                AREditLogger.Instance.Log(mapId, mapName, "ObjectSelected", obj.name);
+            }
+
             // 应用视觉反馈
             ApplySelectionVisual(obj, true);
 
@@ -466,6 +474,15 @@ namespace Assets.Scripts.Manager
         private void DeselectObject(ARPlacedObject obj)
         {
             if (obj == null) return;
+
+            // 记录对象变换（如果发生了变化）
+            if (currentMapSession != null && currentMapSession.Maps.Count > 0)
+            {
+                string mapId = currentMapSession.Maps[0]?.Meta?.Map?.ID ?? "";
+                string mapName = currentMapSession.Maps[0]?.Meta?.Map?.Name ?? "";
+                string transformDetails = $"{{\"position\":\"{obj.transform.localPosition}\",\"rotation\":\"{obj.transform.localEulerAngles}\",\"scale\":\"{obj.transform.localScale}\"}}";
+                AREditLogger.Instance.Log(mapId, mapName, "ObjectTransformed", obj.name, transformDetails);
+            }
 
             // 移除视觉反馈
             ApplySelectionVisual(obj, false);
@@ -986,6 +1003,15 @@ namespace Assets.Scripts.Manager
             }
 
             isEditMode = true;
+
+            // 记录日志
+            if (currentMapSession != null && currentMapSession.Maps.Count > 0)
+            {
+                string mapId = currentMapSession.Maps[0]?.Meta?.Map?.ID ?? "";
+                string mapName = currentMapSession.Maps[0]?.Meta?.Map?.Name ?? "";
+                AREditLogger.Instance.Log(mapId, mapName, "ModeChanged", "", "{{\"mode\":\"EditMode\"}}");
+            }
+
             Debug.Log("[EasyAR Spatial Map Editor] 进入编辑模式");
 
             // 确保mesh在编辑模式下根据showMeshInEditMode控制可见性
@@ -1026,6 +1052,15 @@ namespace Assets.Scripts.Manager
         public void ExitEditMode()
         {
             isEditMode = false;
+
+            // 记录日志
+            if (currentMapSession != null && currentMapSession.Maps.Count > 0)
+            {
+                string mapId = currentMapSession.Maps[0]?.Meta?.Map?.ID ?? "";
+                string mapName = currentMapSession.Maps[0]?.Meta?.Map?.Name ?? "";
+                AREditLogger.Instance.Log(mapId, mapName, "ModeChanged", "", "{{\"mode\":\"ExitEdit\"}}");
+            }
+
             Debug.Log("[EasyAR Spatial Map Editor] 退出编辑模式");
 
             // 退出时取消所有对象的选中状态
@@ -1059,6 +1094,15 @@ namespace Assets.Scripts.Manager
             }
 
             isPlayMode = true;
+
+            // 记录日志
+            if (currentMapSession != null && currentMapSession.Maps.Count > 0)
+            {
+                string mapId = currentMapSession.Maps[0]?.Meta?.Map?.ID ?? "";
+                string mapName = currentMapSession.Maps[0]?.Meta?.Map?.Name ?? "";
+                AREditLogger.Instance.Log(mapId, mapName, "ModeChanged", "", "{{\"mode\":\"PlayMode\"}}");
+            }
+
             Debug.Log("[EasyAR Spatial Map Editor] 进入播放模式");
 
             // 确保mesh在播放模式下视觉隐藏
@@ -1103,6 +1147,15 @@ namespace Assets.Scripts.Manager
             }
 
             isPlayMode = false;
+
+            // 记录日志
+            if (currentMapSession != null && currentMapSession.Maps.Count > 0)
+            {
+                string mapId = currentMapSession.Maps[0]?.Meta?.Map?.ID ?? "";
+                string mapName = currentMapSession.Maps[0]?.Meta?.Map?.Name ?? "";
+                AREditLogger.Instance.Log(mapId, mapName, "ModeChanged", "", "{{\"mode\":\"ExitPlay\"}}");
+            }
+
             Debug.Log("[EasyAR Spatial Map Editor] 退出播放模式");
 
             // 1. 销毁玩家碰撞体
@@ -1759,6 +1812,12 @@ namespace Assets.Scripts.Manager
 
                 OnObjectPlaced?.Invoke(gameObject);
 
+                // 记录日志
+                string mapId = currentMapSession?.Maps[0]?.Meta?.Map?.ID ?? "";
+                string mapName = currentMapSession?.Maps[0]?.Meta?.Map?.Name ?? "";
+                AREditLogger.Instance.Log(mapId, mapName, "ObjectPlaced", gameObject.name,
+                    $"{{\"position\":\"{hitResult.Value}\"}}");
+
                 //// 新增：如果对象包含 ARPlacedObject，设置为当前选中对象并启用手势控制
                 //try
                 //{
@@ -1864,6 +1923,12 @@ namespace Assets.Scripts.Manager
                 {
                     mapData.Props.Remove(obj);
                     OnObjectRemoved?.Invoke(obj);
+
+                    // 记录日志
+                    string mapId = currentMapSession?.Maps[0]?.Meta?.Map?.ID ?? "";
+                    string mapName = currentMapSession?.Maps[0]?.Meta?.Map?.Name ?? "";
+                    AREditLogger.Instance.Log(mapId, mapName, "ObjectDeleted", obj.name);
+
                     Debug.Log($"[EasyAR Spatial Map Editor] 注销对象: {obj.name}");
                     if (autoSaveOnEdit)
                     {
@@ -2296,7 +2361,10 @@ namespace Assets.Scripts.Manager
                 // 2. 从内存列表中移除
                 availableMaps.RemoveAll(m => m?.Map?.ID == mapID);
 
-                // 3. 删除所有相关文件（稀疏地图 + 对象数据）
+                // 3. 删除对应的日志文件
+                AREditLogger.Instance.DeleteMapLog(mapID);
+
+                // 4. 删除所有相关文件（稀疏地图 + 对象数据）
                 bool filesDeleted = DeleteMapFiles(mapID);
 
                 if (filesDeleted)

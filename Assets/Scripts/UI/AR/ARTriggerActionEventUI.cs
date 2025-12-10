@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using System.Linq;
 using System.Reflection;
+using Assets.Scripts.Manager;
 
 namespace UI.AR
 {
@@ -42,6 +43,9 @@ namespace UI.AR
             {
                 data.triggerType = (TriggerType)i;
 
+                // 记录事件修改日志
+                LogEventModification();
+
                 // AR特有：TriggerType变化时也刷新连接线
                 if (AREventSystemManager.Instance != null)
                 {
@@ -59,6 +63,9 @@ namespace UI.AR
             {
                 data.actionType = (ActionType)i;
                 RefreshTargetVisibility(); // 与原版相同：更新目标UI可见性
+
+                // 记录事件修改日志
+                LogEventModification();
 
                 // AR特有：ActionType变化时刷新连接线（因为Win/Lose不显示连接线）
                 if (AREventSystemManager.Instance != null)
@@ -79,7 +86,12 @@ namespace UI.AR
                 StartARTargetSelection();
             });
 
-            deleteButton.onClick.AddListener(() => onDelete?.Invoke());
+            deleteButton.onClick.AddListener(() =>
+            {
+                // 记录删除日志
+                LogEventDeletion();
+                onDelete?.Invoke();
+            });
         }
 
         private void RefreshTargetVisibility()
@@ -147,6 +159,9 @@ namespace UI.AR
                         Debug.LogError("[AR Event UI] AREventSystemManager.Instance 为 null，无法刷新连接线");
                     }
 
+                    // 记录目标修改日志
+                    LogEventModification();
+
                     // 自动保存
                     onAutoSave?.Invoke();
                 }
@@ -171,6 +186,44 @@ namespace UI.AR
                 }
             }
             return null;
+        }
+
+        /// <summary>
+        /// 记录事件修改日志
+        /// </summary>
+        private void LogEventModification()
+        {
+            if (sourceObject == null || EasyARSpatialMapEditorManager.Instance == null)
+                return;
+
+            var mapSession = EasyARSpatialMapEditorManager.Instance.CurrentMapSession;
+            if (mapSession == null || mapSession.Maps.Count == 0)
+                return;
+
+            string mapId = mapSession.Maps[0]?.Meta?.Map?.ID ?? "";
+            string mapName = mapSession.Maps[0]?.Meta?.Map?.Name ?? "";
+            string details = $"{{\\\"triggerType\\\":\\\"{data.triggerType}\\\",\\\"actionType\\\":\\\"{data.actionType}\\\",\\\"targetObjectID\\\":\\\"{data.targetObjectID}\\\"}}";
+
+            AREditLogger.Instance.Log(mapId, mapName, "EventModified", sourceObject.name, details);
+        }
+
+        /// <summary>
+        /// 记录事件删除日志
+        /// </summary>
+        private void LogEventDeletion()
+        {
+            if (sourceObject == null || EasyARSpatialMapEditorManager.Instance == null)
+                return;
+
+            var mapSession = EasyARSpatialMapEditorManager.Instance.CurrentMapSession;
+            if (mapSession == null || mapSession.Maps.Count == 0)
+                return;
+
+            string mapId = mapSession.Maps[0]?.Meta?.Map?.ID ?? "";
+            string mapName = mapSession.Maps[0]?.Meta?.Map?.Name ?? "";
+            string details = $"{{\\\"triggerType\\\":\\\"{data.triggerType}\\\",\\\"actionType\\\":\\\"{data.actionType}\\\",\\\"targetObjectID\\\":\\\"{data.targetObjectID}\\\"}}";
+
+            AREditLogger.Instance.Log(mapId, mapName, "EventDeleted", sourceObject.name, details);
         }
     }
 }

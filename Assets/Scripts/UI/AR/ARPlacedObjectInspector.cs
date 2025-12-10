@@ -30,6 +30,10 @@ namespace UI.AR
                 var evt = new TriggerActionEventData();
                 currentData.events.Add(evt);
                 AddEventItemUI(evt);
+
+                // 记录事件创建日志
+                LogEventOperation("EventCreated", evt);
+
                 // 自动保存
                 TriggerAutoSave();
             });
@@ -166,6 +170,25 @@ namespace UI.AR
             {
                 Debug.LogError("[AR Inspector] 场景中没有找到ARPlacedObjectInspector");
             }
+        }
+
+        /// <summary>
+        /// 记录事件操作日志
+        /// </summary>
+        private void LogEventOperation(string operationType, TriggerActionEventData evt)
+        {
+            if (currentARObject == null || EasyARSpatialMapEditorManager.Instance == null)
+                return;
+
+            var mapSession = EasyARSpatialMapEditorManager.Instance.CurrentMapSession;
+            if (mapSession == null || mapSession.Maps.Count == 0)
+                return;
+
+            string mapId = mapSession.Maps[0]?.Meta?.Map?.ID ?? "";
+            string mapName = mapSession.Maps[0]?.Meta?.Map?.Name ?? "";
+            string details = $"{{\\\"triggerType\\\":\\\"{evt.triggerType}\\\",\\\"actionType\\\":\\\"{evt.actionType}\\\",\\\"targetObjectID\\\":\\\"{evt.targetObjectID}\\\"}}";
+
+            AREditLogger.Instance.Log(mapId, mapName, operationType, currentARObject.name, details);
         }
     }
 }
