@@ -2795,35 +2795,17 @@ namespace Assets.Scripts.Manager
                 return;
             }
 
-            // 扫描JSON文件
-            string savePath = Application.persistentDataPath;
-            if (!System.IO.Directory.Exists(savePath))
+            // 直接加载TestScene.json
+            string fileName = "TestScene.json";
+            string fullPath = System.IO.Path.Combine(Application.persistentDataPath, fileName);
+
+            if (!System.IO.File.Exists(fullPath))
             {
-                Debug.LogWarning("[EasyAR] Save path does not exist");
+                Debug.LogWarning($"[EasyAR] Level file not found: {fullPath}");
                 return;
             }
 
-            string[] jsonFiles = System.IO.Directory.GetFiles(savePath, "*.json");
-            if (jsonFiles.Length == 0)
-            {
-                Debug.LogWarning("[EasyAR] No JSON level files found");
-                return;
-            }
-
-            // 按修改时间排序，获取最新文件
-            var latestFile = jsonFiles
-                .Select(f => new System.IO.FileInfo(f))
-                .OrderByDescending(f => f.LastWriteTime)
-                .FirstOrDefault();
-
-            if (latestFile == null)
-            {
-                Debug.LogWarning("[EasyAR] Unable to get latest JSON file");
-                return;
-            }
-
-            string fileName = latestFile.Name;
-            Debug.Log($"[EasyAR] Auto-loading latest level: {fileName}, modified: {latestFile.LastWriteTime}");
+            Debug.Log($"[EasyAR] Loading level file: {fileName}");
 
             // 调用现有的加载方法
             LoadObjectsFromJsonToMesh(fileName);
