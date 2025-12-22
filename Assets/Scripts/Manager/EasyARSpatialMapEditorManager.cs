@@ -2593,19 +2593,19 @@ namespace Assets.Scripts.Manager
             // 前置条件检查
             if (!isMapLocalized)
             {
-                Debug.LogWarning("[EasyAR] 地图未本地化，无法加载2D关卡数据");
+                Debug.LogWarning("[EasyAR] Map not localized, cannot load 2D level data");
                 return false;
             }
 
             if (currentAlignedMeshInstance == null)
             {
-                Debug.LogWarning("[EasyAR] Mesh未配置，无法加载2D关卡数据。请先完成Mesh对齐配置。");
+                Debug.LogWarning("[EasyAR] Mesh not configured, cannot load 2D level data. Please complete mesh alignment first.");
                 return false;
             }
 
             if (currentMapSession == null || currentMapSession.Maps.Count == 0)
             {
-                Debug.LogWarning("[EasyAR] 当前没有有效的地图会话");
+                Debug.LogWarning("[EasyAR] No valid map session available");
                 return false;
             }
 
@@ -2613,7 +2613,7 @@ namespace Assets.Scripts.Manager
             var templateDB = EditorManager.Instance?.templateDB;
             if (templateDB == null)
             {
-                Debug.LogError("[EasyAR] 模板数据库未找到，无法加载物体");
+                Debug.LogError("[EasyAR] Template database not found, cannot load objects");
                 return false;
             }
 
@@ -2621,7 +2621,7 @@ namespace Assets.Scripts.Manager
             string fullPath = System.IO.Path.Combine(Application.persistentDataPath, fileName);
             if (!System.IO.File.Exists(fullPath))
             {
-                Debug.LogError($"[EasyAR] 关卡文件不存在: {fullPath}");
+                Debug.LogError($"[EasyAR] Level file does not exist: {fullPath}");
                 return false;
             }
 
@@ -2630,7 +2630,7 @@ namespace Assets.Scripts.Manager
 
             if (sceneData == null || sceneData.objects == null || sceneData.objects.Count == 0)
             {
-                Debug.LogWarning($"[EasyAR] 关卡文件为空或无效: {fileName}");
+                Debug.LogWarning($"[EasyAR] Level file is empty or invalid: {fileName}");
                 return false;
             }
 
@@ -2644,8 +2644,8 @@ namespace Assets.Scripts.Manager
             // 验证mesh的父节点是否正确
             if (currentAlignedMeshInstance.transform.parent != mapController.transform)
             {
-                Debug.LogError($"[EasyAR] 严重错误：mesh的父节点({currentAlignedMeshInstance.transform.parent?.name})不是当前MapController({mapController.name})！");
-                Debug.Log($"[EasyAR] 尝试修正：将mesh重新挂载到正确的MapController下");
+                Debug.LogError($"[EasyAR] Critical error: mesh parent ({currentAlignedMeshInstance.transform.parent?.name}) is not the current MapController ({mapController.name})!");
+                Debug.Log($"[EasyAR] Attempting fix: remounting mesh to correct MapController");
 
                 // 保存当前的本地变换
                 Vector3 savedLocalPos = currentAlignedMeshInstance.transform.localPosition;
@@ -2674,11 +2674,11 @@ namespace Assets.Scripts.Manager
 
             if (levelParent == null)
             {
-                Debug.LogWarning("[EasyAR] 未找到LevelParent子物体，使用mesh根节点作为父节点");
+                Debug.LogWarning("[EasyAR] LevelParent child not found, using mesh root as parent");
                 levelParent = currentAlignedMeshInstance.transform;
             }
 
-            Debug.Log($"[EasyAR] 开始从JSON加载 {sceneData.objects.Count} 个物体到mesh下");
+            Debug.Log($"[EasyAR] Starting to load {sceneData.objects.Count} objects from JSON to mesh");
             Debug.Log($"[EasyAR] LevelParent: {levelParent.name}, 世界位置: {levelParent.position}, 世界旋转: {levelParent.eulerAngles}");
 
             foreach (var data in sceneData.objects)
@@ -2689,7 +2689,7 @@ namespace Assets.Scripts.Manager
                     var template = templateDB.GetTemplateByID(data.templateID);
                     if (template == null || template.ARPrefab == null)
                     {
-                        Debug.LogWarning($"[EasyAR] 找不到templateID为 {data.templateID} 的模板，跳过此物体");
+                        Debug.LogWarning($"[EasyAR] Template with templateID {data.templateID} not found, skipping this object");
                         continue;
                     }
 
@@ -2697,7 +2697,7 @@ namespace Assets.Scripts.Manager
                     GameObject obj = Instantiate(template.ARPrefab);
                     obj.name = template.ARPrefab.name;
 
-                    Debug.Log($"[EasyAR] 加载物体 {obj.name} - JSON坐标: pos={data.position}, rot={data.rotation}, scale={data.scale}");
+                    Debug.Log($"[EasyAR] Loading object {obj.name} - JSON coordinates: pos={data.position}, rot={data.rotation}, scale={data.scale}");
 
                     // 【关键】完全按照PlaceGameObjectOnMap的锚定方式：
                     // Step 1: 先临时将物体挂到LevelParent下，用JSON数据设置本地坐标，计算出世界坐标
@@ -2752,15 +2752,15 @@ namespace Assets.Scripts.Manager
                     obj.SetActive(true);
 
                     loadedCount++;
-                    Debug.Log($"[EasyAR] 加载物体: {obj.name}, ID: {arPlacedObject.runtimeData.ID}, 世界位置: {obj.transform.position}");
+                    Debug.Log($"[EasyAR] Loaded object: {obj.name}, ID: {arPlacedObject.runtimeData.ID}, world position: {obj.transform.position}");
                 }
                 catch (System.Exception ex)
                 {
-                    Debug.LogWarning($"[EasyAR] 加载物体失败: {ex.Message}");
+                    Debug.LogWarning($"[EasyAR] Failed to load object: {ex.Message}");
                 }
             }
 
-            Debug.Log($"[EasyAR] 从JSON加载完成，共加载 {loadedCount}/{sceneData.objects.Count} 个物体");
+            Debug.Log($"[EasyAR] JSON loading complete, loaded {loadedCount}/{sceneData.objects.Count} objects");
 
             // 保存对象信息到MapMeta
             if (autoSaveOnEdit)
@@ -2785,13 +2785,13 @@ namespace Assets.Scripts.Manager
             // 前置条件检查
             if (!isMapLocalized)
             {
-                Debug.LogWarning("[EasyAR] 地图未本地化，无法加载2D关卡数据");
+                Debug.LogWarning("[EasyAR] Map not localized, cannot load 2D level data");
                 return;
             }
 
             if (currentAlignedMeshInstance == null)
             {
-                Debug.LogWarning("[EasyAR] Mesh未配置，无法加载2D关卡数据");
+                Debug.LogWarning("[EasyAR] Mesh not configured, cannot load 2D level data");
                 return;
             }
 
@@ -2799,14 +2799,14 @@ namespace Assets.Scripts.Manager
             string savePath = Application.persistentDataPath;
             if (!System.IO.Directory.Exists(savePath))
             {
-                Debug.LogWarning("[EasyAR] 保存路径不存在");
+                Debug.LogWarning("[EasyAR] Save path does not exist");
                 return;
             }
 
             string[] jsonFiles = System.IO.Directory.GetFiles(savePath, "*.json");
             if (jsonFiles.Length == 0)
             {
-                Debug.LogWarning("[EasyAR] 没有找到任何JSON关卡文件");
+                Debug.LogWarning("[EasyAR] No JSON level files found");
                 return;
             }
 
@@ -2818,12 +2818,12 @@ namespace Assets.Scripts.Manager
 
             if (latestFile == null)
             {
-                Debug.LogWarning("[EasyAR] 无法获取最新的JSON文件");
+                Debug.LogWarning("[EasyAR] Unable to get latest JSON file");
                 return;
             }
 
             string fileName = latestFile.Name;
-            Debug.Log($"[EasyAR] 自动加载最新关卡: {fileName}, 修改时间: {latestFile.LastWriteTime}");
+            Debug.Log($"[EasyAR] Auto-loading latest level: {fileName}, modified: {latestFile.LastWriteTime}");
 
             // 调用现有的加载方法
             LoadObjectsFromJsonToMesh(fileName);

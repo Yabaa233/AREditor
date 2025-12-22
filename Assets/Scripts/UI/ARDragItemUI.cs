@@ -33,8 +33,8 @@ public class ARDragItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEnd
         if (eventSystem != null)
         {
             eventSystem.pixelDragThreshold = (int)dragThreshold;
-            if (enableDebugLogs)
-                Debug.Log($"[ARDrag] 设置拖拽阈值: {dragThreshold}");
+            //if (enableDebugLogs)
+            //Debug.Log($"[ARDrag] 设置拖拽阈值: {dragThreshold}");
         }
 
         // 确保UI元素可以接收触摸事件
@@ -53,8 +53,8 @@ public class ARDragItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEnd
             //button.onClick.AddListener(OnButtonClick);
         }
 
-        if (enableDebugLogs)
-            Debug.Log($"[ARDrag] {gameObject.name} 初始化完成");
+        //if (enableDebugLogs)
+        // Debug.Log($"[ARDrag] {gameObject.name} 初始化完成");
     }
 
     ///// <summary>
@@ -84,36 +84,36 @@ public class ARDragItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEnd
             Touch touch = Input.GetTouch(0);
             if (touch.phase == TouchPhase.Began)
             {
-                Debug.Log($"[ARDrag] 检测到触摸开始: {touch.position}");
+                //Debug.Log($"[ARDrag] 检测到触摸开始: {touch.position}");
             }
         }
     }
 
     public void OnPointerDown(PointerEventData eventData)
     {
-        if (enableDebugLogs)
-            Debug.Log($"[ARDrag] OnPointerDown - 触摸开始: {eventData.position}");
+        // if (enableDebugLogs)
+        // Debug.Log($"[ARDrag] OnPointerDown - 触摸开始: {eventData.position}");
     }
 
     public void OnPointerUp(PointerEventData eventData)
     {
-        if (enableDebugLogs)
-            Debug.Log($"[ARDrag] OnPointerUp - 触摸结束: {eventData.position}");
+        //if (enableDebugLogs)
+        //Debug.Log($"[ARDrag] OnPointerUp - 触摸结束: {eventData.position}");
     }
 
     public void OnBeginDrag(PointerEventData eventData)
     {
         if (enableDebugLogs)
-            Debug.Log($"[ARDrag] OnBeginDrag - 开始拖拽: {eventData.position}");
+            // Debug.Log($"[ARDrag] OnBeginDrag - 开始拖拽: {eventData.position}");
 
-        isDragging = true;
+            isDragging = true;
 
         // 取消之前选中的对象，避免拖拽新物体时旧物体跟着移动
         if (arManager != null)
         {
             arManager.DeselectAllObjects();
-            if (enableDebugLogs)
-                Debug.Log("[ARDrag] 已取消之前选中的对象");
+            //if (enableDebugLogs)
+            //Debug.Log("[ARDrag] 已取消之前选中的对象");
         }
 
         // 创建拖拽图标
@@ -122,7 +122,7 @@ public class ARDragItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEnd
         // 检查是否可以放置对象
         if (!CanPlaceObject())
         {
-            Debug.LogWarning("[ARDrag] 无法放置对象：地图未本地化或不在编辑模式");
+            // Debug.LogWarning("[ARDrag] 无法放置对象：地图未本地化或不在编辑模式");
             return;
         }
 
@@ -131,18 +131,18 @@ public class ARDragItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEnd
     public void OnDrag(PointerEventData eventData)
     {
         if (enableDebugLogs)
-            Debug.Log($"[ARDrag] OnDrag - 拖拽中: {eventData.position}");
+            // Debug.Log($"[ARDrag] OnDrag - 拖拽中: {eventData.position}");
 
-        if (dragIcon)
-            dragIcon.position = eventData.position;
+            if (dragIcon)
+                dragIcon.position = eventData.position;
     }
 
     public void OnEndDrag(PointerEventData eventData)
     {
         if (enableDebugLogs)
-            Debug.Log($"[ARDrag] OnEndDrag - 结束拖拽: {eventData.position}");
+            // Debug.Log($"[ARDrag] OnEndDrag - 结束拖拽: {eventData.position}");
 
-        isDragging = false;
+            isDragging = false;
 
         if (dragIcon)
             Destroy(dragIcon.gameObject);
@@ -193,8 +193,8 @@ public class ARDragItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEnd
         // 确保拖拽图标在最上层
         dragIcon.SetAsLastSibling();
 
-        if (enableDebugLogs)
-            Debug.Log($"[ARDrag] 创建拖拽图标: {dragIcon.position}");
+        //if (enableDebugLogs)
+        // Debug.Log($"[ARDrag] 创建拖拽图标: {dragIcon.position}");
     }
 
     /// <summary>
@@ -204,7 +204,7 @@ public class ARDragItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEnd
     {
         if (arObjectPrefab == null)
         {
-            Debug.LogError("[ARDrag] arObjectPrefab 未设置");
+            // Debug.LogError("[ARDrag] arObjectPrefab 未设置");
             return;
         }
 
@@ -238,8 +238,8 @@ public class ARDragItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEnd
             if (arPlacedObject == null)
             {
                 arPlacedObject = newObject.AddComponent<ARPlacedObject>();
-                if (enableDebugLogs)
-                    Debug.Log("[ARDrag] 添加了ARPlacedObject组件");
+                //if (enableDebugLogs)
+                //    Debug.Log("[ARDrag] 添加了ARPlacedObject组件");
             }
 
             // 手动设置位置和状态
@@ -248,11 +248,11 @@ public class ARDragItemUI : MonoBehaviour, IBeginDragHandler, IDragHandler, IEnd
             // 注册到管理器
             arManager.RegisterPlacedObjectAtPosition(newObject, hitPosition);
 
-            Debug.Log($"[ARDrag] 成功放置对象: {arObjectPrefab.name} 在位置: {hitPosition}");
+            // Debug.Log($"[ARDrag] 成功放置对象: {arObjectPrefab.name} 在位置: {hitPosition}");
         }
         else
         {
-            Debug.LogWarning("[ARDrag] 射线未击中稀疏点云，无法放置对象");
+            // Debug.LogWarning("[ARDrag] 射线未击中稀疏点云，无法放置对象");
         }
     }
 }
